@@ -1,25 +1,22 @@
 public class Order {
 
-    private String itemName;
-    private int price;
-    private int preparationUnits;
+    private MenuItem item;
     private int preparedUnits;
     private String status;
 
-    public Order(Menu menu, int index) {
-        this.item = menu.getName(index);
-        this.price = menu.getPrice(index);
-        this.preparationUnits = menu.getPreparationUnits(index);
+    public Order(MenuItem item) {
+        this.item = item;
         this.preparedUnits = 0;
         this.status = "WAITING_FOR_FOOD";
+        this.readyTurn = -1;
     }
 
-    public String getItemName() {
-        return itemName;
+    public MenuItem getItem() {
+        return item;
     }
 
     public int getPrice() {
-        return price;
+        return item.getPrice();
     }
 
     public int getPreparedUnits() {
@@ -34,7 +31,7 @@ public class Order {
         return status.equals("READY");
     }
 
-    public void prepareOneUnit() {
+    public void prepareOneUnit(int currentTurn) {
         if (isReady()) {
             System.out.println("This order is already ready.");
             return;
@@ -44,11 +41,26 @@ public class Order {
 
         if (preparedUnits >= item.getPreparationUnits()) {
             status = "READY";
-            System.out.println(itemName + " is READY.");
+            System.out.println(item.getName() + " is READY.");
         } else {
-            System.out.println(itemName + " preparation progress: " + preparedUnits + "/" + item.getPreparationUnits());
+            System.out.println(item.getName() + " preparation progress: " + preparedUnits + "/" + item.getPreparationUnits());
         }
     }
+
+    public void markPaid() {
+        if (!status.equals("SERVED")) {
+            throw new IllegalStateException("Order has not been served.")
+        }
+        status = "PAID";
+    }
+
+    public void cancel() {
+        if (!status.equals("PAID")) {
+            status = "CANCELLED";
+        }
+    }
+
+    
 
     public void displayOrderInfo() {
         System.out.println("Item: " + item.getName());
