@@ -1,56 +1,71 @@
-/** A regular customer. Order details belong to the Order class. */
+// Regular restaurant customer
 public class Customer {
+    // Unique customer ID
     private final int id;
+    // Current satisfaction score
     private int satisfaction;
+    // Current customer stage
     private CustomerState state;
+    // Turn when food was served
     private int servedTurn;
+    // Turn when payment became possible
     private int readyToPayTurn;
 
+    // Create a new waiting customer
     public Customer(int id) {
+        // IDs must be positive
         if (id <= 0) {
             throw new IllegalArgumentException("Customer ID must be positive.");
         }
         this.id = id;
         this.satisfaction = 100;
         this.state = CustomerState.WAITING;
+        // -1 = not served yet
         this.servedTurn = -1;
+        // -1 = not ready to pay yet
         this.readyToPayTurn = -1;
     }
 
+    // Customer ID
     public int getId() {
         return id;
     }
 
+    // Current satisfaction
     public int getSatisfaction() {
         return satisfaction;
     }
 
+    // Current state
     public CustomerState getState() {
         return state;
     }
 
-    /** -1 until ready; used by Cashier to pay the oldest ready customer first. */
+    // Used to find the oldest ready customer
     public int getReadyToPayTurn() {
         return readyToPayTurn;
     }
 
-    /** Stage 1 regular customers lose 8 satisfaction per unserved turn. */
+    // Stage 1 satisfaction loss per turn
     public int getSatisfactionLossPerTurn() {
         return 8;
     }
 
+    // Move from waiting to seated
     public void seat() {
         requireState(CustomerState.WAITING);
         state = CustomerState.SEATED;
     }
 
+    // Move from seated to ordered
     public void placeOrder() {
         requireState(CustomerState.SEATED);
         state = CustomerState.ORDERED;
     }
 
-    /** Called when a READY order is actually served by the Waiter. */
+    // Mark food as served
     public void markServed(int currentTurn) {
+        // Turn numbers start at 1
         if (currentTurn < 1) {
             throw new IllegalArgumentException("Turn must be positive.");
         }
@@ -59,7 +74,7 @@ public class Customer {
         servedTurn = currentTurn;
     }
 
-    /** At the eating step, a previously served customer becomes ready to pay. */
+    // Finish eating on a later turn
     public boolean finishEating(int currentTurn) {
         if (state == CustomerState.SERVED && currentTurn > servedTurn) {
             state = CustomerState.READY_TO_PAY;
@@ -69,30 +84,32 @@ public class Customer {
         return false;
     }
 
+    // Mark payment complete
     public void markPaid() {
         requireState(CustomerState.READY_TO_PAY);
         state = CustomerState.PAID;
     }
 
-    /**
-     * Apply the end-of-turn penalty once. Returns true if this customer
-     * has just abandoned the restaurant due to zero satisfaction.
-     */
+    // Apply one end-of-turn penalty
     public boolean applyEndOfTurnPenalty() {
+        // No penalty after service or departure
         if (state != CustomerState.WAITING &&
             state != CustomerState.SEATED &&
             state != CustomerState.ORDERED) {
             return false;
         }
 
+        // Keep satisfaction at or above zero
         satisfaction = Math.max(0, satisfaction - getSatisfactionLossPerTurn());
         if (satisfaction == 0) {
+            // Customer leaves at zero satisfaction
             state = CustomerState.LEFT;
             return true;
         }
         return false;
     }
 
+    // Enforce valid state transitions
     private void requireState(CustomerState expected) {
         if (state != expected) {
             throw new IllegalStateException(
@@ -101,6 +118,7 @@ public class Customer {
         }
     }
 
+    // Readable customer summary
     @Override
     public String toString() {
         return "Customer " + id + " [" + state + ", satisfaction=" + satisfaction + "]";
