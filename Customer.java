@@ -10,6 +10,8 @@ public class Customer {
     private int servedTurn;
     // Turn when payment became possible
     private int readyToPayTurn;
+    // Order placed by the customer
+    private Order order;
 
     // Create a new waiting customer
     public Customer(int id) {
@@ -29,6 +31,16 @@ public class Customer {
     // Customer ID
     public int getId() {
         return id;
+    }
+
+    // Customer order
+    public Order getOrder() {
+        return order;
+    }
+
+    // Assign an order to the customer
+    public void setOrder(Order order) {
+        this.order = order;
     }
 
     // Current satisfaction
