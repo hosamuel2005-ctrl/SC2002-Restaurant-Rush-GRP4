@@ -1,4 +1,4 @@
-# SC2002-Restaurant-Rush-GRP4
+# Java Class Guide
 
 **My part:** Waiter (seat customer, take order, serve READY order) and Cashier (READY_TO_PAY, payment, revenue).
 **Status:** Stage 1 only (basic operation). Written against the interface in section 5; compile it together with the real Customer, Table, Order, Chef etc. once they exist.
@@ -128,3 +128,29 @@ Also needed from `Customer`: the eating step. After `markServed(t)`, a customer 
 2. **Waiter acts immediately when the manager chooses.** If Samuel prefers to collect all choices first and execute afterwards, the Waiter's methods still work if he calls them in step 3 in the order Waiter then Chef.
 3. **Who advances eating** (SERVED → READY_TO_PAY) is not owned by the Waiter or Cashier (see section 5).
 4. **Who removes cancelled orders from the Chef's list** when a customer abandons is Person 2 / Person 4. The Cashier never sees them because only READY_TO_PAY customers are charged.
+## Customer.java
+Represents a customer and stores their ID, satisfaction (starts at 100), and current state.
+
+- `seat()`, `placeOrder()`, `markServed(turn)`, and `markPaid()` update the customer's state.
+- `finishEating(turn)` changes the state to `READY_TO_PAY` on a later turn after serving.
+- `applyEndOfTurnPenalty()` removes 8 satisfaction per turn while waiting for food. At 0, the customer becomes `LEFT`.
+
+## CustomerState.java
+An enum containing the possible customer states:
+`WAITING`, `SEATED`, `ORDERED`, `SERVED`, `READY_TO_PAY`, `PAID`, and `LEFT`.
+
+## Table.java
+Stores a table ID and its current customer.
+
+- `isFree()` checks whether the table is available.
+- `seatCustomer(customer)` seats a waiting customer.
+- `freeTable()` clears the table once the customer has `PAID` or `LEFT`.
+
+## Queue.java
+Stores customers who are waiting for a table.
+
+- `addCustomer(customer)` adds a customer to the queue.
+- `findCustomer(id)` finds a customer by ID.
+- `seatCustomer(id, table)` seats the chosen customer and removes them from the queue.
+- `removeAbandonedCustomers()` removes customers who have `LEFT`.
+- `getCustomers()` and `size()` let other classes view the queue.
