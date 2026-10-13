@@ -65,14 +65,14 @@ public class Cashier {
         Order order = customer.getOrder();
 
         // Read everything we need BEFORE freeing the table / changing states.
-        int bill = order.getBillCents();
+        int bill = order.getPrice();
         int satisfaction = customer.getSatisfaction();
         PaymentRecord record = new PaymentRecord(turn, customer.getId(), table.getId(),
                 order.getItem().getName(), bill, satisfaction);
 
         order.markPaid();
         customer.markPaid();
-        table.free();
+        table.freeTable();
 
         revenueCents += bill;
         satisfactionTotal += satisfaction;
@@ -99,7 +99,7 @@ public class Cashier {
         Optional<Customer> next = previewNextPayer(turn, tables);
         if (next.isPresent()) {
             Customer c = next.get();
-            return "Cashier will collect " + Money.format(c.getOrder().getBillCents())
+            return "Cashier will collect " + Money.format(c.getOrder().getPrice())
                     + " from customer #" + c.getId() + " automatically.";
         }
         return "Cashier: no customer ready to pay.";
@@ -144,7 +144,7 @@ public class Cashier {
     private Table findNextTableToPay(int turn, List<Table> tables) {
         Table best = null;
         for (Table t : tables) {
-            if (!t.isOccupied() || !canCharge(t.getCustomer(), turn)) {
+            if (!t.isFree() || !canCharge(t.getCustomer(), turn)) {
                 continue;
             }
             if (best == null || isOlder(t.getCustomer(), best.getCustomer())) {
