@@ -23,7 +23,7 @@ public class MenuItem {
     }
 
     public void displayInfo() {
-        System.out.println(name + " - $" + price
+        System.out.println(name + " - $" + Money.format(price)
                 + " - " + preparationUnits + " preparation unit(s)");
     }
 }
