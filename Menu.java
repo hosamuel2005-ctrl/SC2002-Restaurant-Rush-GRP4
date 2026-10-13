@@ -16,7 +16,7 @@ public class Menu {
   
   // Number of availables dishes (here three)
   public int getMenuSize() {
-    return names.length;
+    return items.length;
   }
 
   // Display the menu
