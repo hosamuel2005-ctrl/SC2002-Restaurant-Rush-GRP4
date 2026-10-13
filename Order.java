@@ -48,7 +48,7 @@ public class Order {
 
     public void markPaid() {
         if (!status.equals("SERVED")) {
-            throw new IllegalStateException("Order has not been served.")
+            throw new IllegalStateException("Order has not been served.");
         }
         status = "PAID";
     }
