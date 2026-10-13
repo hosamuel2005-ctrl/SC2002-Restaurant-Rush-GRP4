@@ -6,7 +6,7 @@ public class Waiter {
   }
 
   public ActionResult seatCustomer(Customer customer, Table table, Queue queue) {
-    if (customer == null) {
+    if (customer == null || queue == null || queue.findCustomer(customer.getId()) != customer) {
       return ActionResult.failure("Customer not found.");
     }
 
@@ -14,8 +14,8 @@ public class Waiter {
       return ActionResult.failure("Table not found.");
     }
 
-    if (table.isFree() == false) {
-      return ActionResult.failure("Table is already occupied.");
+    if (!table.isFree()) {
+      return ActionResult.failure("Table is occupied.");
     }
 
     queue.seatCustomer(customer.getId(), table);
@@ -38,7 +38,7 @@ public class Waiter {
     Order order = new Order(item);
     customer.placeOrder(order);
 
-    return ActionResult.success("Customer " + customer.getId() + " ordered " + item.getName() + ".");   
+    return ActionResult.success("Customer " + customer.getId() + " ordered " + item.getName() + " (" + Money.format(order.getBillCents()) + ").");   
   }
 
   public ActionResult serveOrder(Customer customer, int currentTurn) {
