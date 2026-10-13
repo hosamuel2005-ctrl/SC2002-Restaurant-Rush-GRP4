@@ -116,6 +116,11 @@ public class Customer {
         if (satisfaction == 0) {
             // Customer leaves at zero satisfaction
             state = CustomerState.LEFT;
+
+            // Cancel any unfinished order
+            if (order != null) {
+                order.cancel();
+            }
             return true;
         }
         return false;
