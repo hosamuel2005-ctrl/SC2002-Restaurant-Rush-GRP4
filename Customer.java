@@ -38,11 +38,6 @@ public class Customer {
         return order;
     }
 
-    // Assign an order to the customer
-    public void setOrder(Order order) {
-        this.order = order;
-    }
-
     // Current satisfaction
     public int getSatisfaction() {
         return satisfaction;
@@ -72,6 +67,11 @@ public class Customer {
     // Move from seated to ordered
     public void placeOrder() {
         requireState(CustomerState.SEATED);
+
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null.");
+        }
+        this.order = order;
         state = CustomerState.ORDERED;
     }
 
