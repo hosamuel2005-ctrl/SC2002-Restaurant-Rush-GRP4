@@ -30,9 +30,13 @@ public class Order {
         return status.equals("READY");
     }
 
+    public boolean canPrepare() {
+        return status.equals("WAITING_FOR_FOOD");
+    }
+
     public void prepareOneUnit() {
-        if (isReady()) {
-            System.out.println("This order is already ready.");
+        if (!canPrepare()) {
+            System.out.println("This order cannot be prepared");
             return;
         }
 
@@ -46,8 +50,11 @@ public class Order {
         }
     }
 
-    public boolean canPrepare() {
-        return status.equals("WAITING_FOR_FOOD");
+    public void markServed() {
+        if (!isReady()) {
+            throw new IllegalStateException("Order is not ready.");
+        }
+        status = "SERVED";
     }
 
     public void markPaid() {
