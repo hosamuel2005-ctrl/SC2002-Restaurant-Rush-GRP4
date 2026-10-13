@@ -1,5 +1,5 @@
 public class Waiter {
-  private Menu menu;
+  private final Menu menu;
 
   public Waiter(Menu menu) {
     this.menu = menu;
@@ -7,7 +7,7 @@ public class Waiter {
 
   public ActionResult seatCustomer(Customer customer, Table table, Queue queue) {
     if (customer == null || queue == null || queue.findCustomer(customer.getId()) != customer) {
-      return ActionResult.failure("Customer not found.");
+      return ActionResult.failure("Customer is not in the waiting queue.");
     }
 
     if (table == null) {
