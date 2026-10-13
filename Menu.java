@@ -1,9 +1,9 @@
 public class Menu {
 
   private MenuItem[] items = {
-    new MenuItem("Salad", 900, 1);
-    new MenuItem("Bruger", 1500, 1);
-    new MenuItem("Salad", 1800, 2);
+    new MenuItem("Salad", 900, 1),
+    new MenuItem("Bruger", 1500, 1),
+    new MenuItem("Salad", 1800, 2),
   };
 
   public MenuItem getItem(int index) {
