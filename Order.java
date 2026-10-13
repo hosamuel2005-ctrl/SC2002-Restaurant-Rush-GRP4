@@ -46,6 +46,10 @@ public class Order {
         }
     }
 
+    public boolean canPrepare() {
+        return status.equals("WAITING_FOR_FOOD");
+    }
+
     public void markPaid() {
         if (!status.equals("SERVED")) {
             throw new IllegalStateException("Order has not been served.");
