@@ -31,7 +31,7 @@ public class Order {
         return status.equals("READY");
     }
 
-    public void prepareOneUnit(int currentTurn) {
+    public void prepareOneUnit() {
         if (isReady()) {
             System.out.println("This order is already ready.");
             return;
