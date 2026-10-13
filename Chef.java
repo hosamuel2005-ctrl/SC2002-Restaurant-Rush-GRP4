@@ -6,7 +6,7 @@ public class Chef {
             return false;
         }
 
-        if (order.isReady()) {
+        if (order.canPrepare()) {
             System.out.println("This order is already ready.");
             return false;
         }
