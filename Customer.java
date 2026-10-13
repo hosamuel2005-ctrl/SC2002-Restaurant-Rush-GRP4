@@ -65,7 +65,7 @@ public class Customer {
     }
 
     // Move from seated to ordered
-    public void placeOrder() {
+    public void placeOrder(Order order) {
         requireState(CustomerState.SEATED);
 
         if (order == null) {
