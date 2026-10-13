@@ -7,7 +7,7 @@ public class Menu {
 
     items[0] = new MenuItem("Salad", 900, 1);
     items[1] = new MenuItem("Bruger", 1500, 1);
-    items[2] = new MenuItem("Salad", 1800, 1);
+    items[2] = new MenuItem("Salad", 1800, 2);
   }
 
   public MenuItem getItem(int index) {
