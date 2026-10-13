@@ -1,18 +1,20 @@
 public class Chef {
 
-    public void prepareOrder(Order order) {
+    public boolean prepareOrder(Order order) {
         if (order == null) {
             System.out.println("No order selected.");
-            return;
+            return false;
         }
 
         if (order.isReady()) {
             System.out.println("This order is already ready.");
-            return;
+            return false;
         }
 
-        System.out.println(name + " is preparing " + order.getItem().getName() + ".");
+        System.out.println("Chef is preparing " + order.getItem().getName() + ".");
 
         order.prepareOneUnit();
+
+        return true;
     }
 }
