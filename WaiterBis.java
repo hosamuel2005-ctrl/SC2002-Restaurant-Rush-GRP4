@@ -34,7 +34,7 @@ import java.util.List;
  *       bill at order time (price is "locked when the order is taken").</li>
  * </ul>
  */
-public class Waiter {
+public class WaiterBis {
 
     private final Menu menu;
     private final Chef chef;
