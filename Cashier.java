@@ -144,7 +144,7 @@ public class Cashier {
     private Table findNextTableToPay(int turn, List<Table> tables) {
         Table best = null;
         for (Table t : tables) {
-            if (!t.isFree() || !canCharge(t.getCustomer(), turn)) {
+            if (t.isFree() || !canCharge(t.getCustomer(), turn)) {
                 continue;
             }
             if (best == null || isOlder(t.getCustomer(), best.getCustomer())) {
