@@ -8,7 +8,6 @@ public class Order {
         this.item = item;
         this.preparedUnits = 0;
         this.status = "WAITING_FOR_FOOD";
-        this.readyTurn = -1;
     }
 
     public MenuItem getItem() {
