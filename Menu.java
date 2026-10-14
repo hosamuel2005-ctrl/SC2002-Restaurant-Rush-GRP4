@@ -2,8 +2,8 @@ public class Menu {
 
   private MenuItem[] items = {
     new MenuItem("Salad", 900, 1),
-    new MenuItem("Bruger", 1500, 1),
-    new MenuItem("Salad", 1800, 2),
+    new MenuItem("Burger", 1500, 1),
+    new MenuItem("Pasta", 1800, 2),
   };
 
   // Get a menu item
