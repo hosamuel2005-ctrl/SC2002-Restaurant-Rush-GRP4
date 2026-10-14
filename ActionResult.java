@@ -1,5 +1,3 @@
-package restaurant.staff;
-
 /**
  * Outcome of a manager-chosen staff action.
  *
