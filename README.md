@@ -145,7 +145,7 @@ Stores a table ID and its current customer.
 - `seatCustomer(customer)` seats a waiting customer.
 - `freeTable()` clears the table once the customer has `PAID` or `LEFT`.
 
-## Queue.java
+## WaitingQueue.java
 Stores customers who are waiting for a table.
 
 - `addCustomer(customer)` adds a customer to the queue.
