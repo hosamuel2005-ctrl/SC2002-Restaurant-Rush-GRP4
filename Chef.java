@@ -1,5 +1,6 @@
 public class Chef {
 
+    // Prepare one unit of an order
     public boolean prepareOrder(Order order) {
         if (order == null) {
             System.out.println("No order selected.");
