@@ -5,7 +5,7 @@ public class Waiter {
     this.menu = menu;
   }
 
-  public ActionResult seatCustomer(Customer customer, Table table, Queue queue) {
+  public ActionResult seatCustomer(Customer customer, Table table, WaitingQueue queue) {
     if (customer == null || queue == null || queue.findCustomer(customer.getId()) != customer) {
       return ActionResult.failure("Customer is not in the waiting queue.");
     }
@@ -38,7 +38,7 @@ public class Waiter {
     Order order = new Order(item);
     customer.placeOrder(order);
 
-    return ActionResult.success("Customer " + customer.getId() + " ordered " + item.getName() + " (" + Money.format(order.getBillCents()) + ").");   
+    return ActionResult.success("Customer " + customer.getId() + " ordered " + item.getName() + " (" + Money.format(order.getPrice()) + ").");   
   }
 
   public ActionResult serveOrder(Customer customer, int currentTurn) {
