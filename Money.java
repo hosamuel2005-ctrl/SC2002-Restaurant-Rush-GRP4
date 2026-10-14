@@ -1,5 +1,3 @@
-package restaurant.util;
-
 /**
  * Tiny helper for the "store money as integer cents, show dollars with two
  * decimals" rule (assignment Section 2.2). Shared by anyone who prints money.
