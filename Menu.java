@@ -6,6 +6,7 @@ public class Menu {
     new MenuItem("Salad", 1800, 2),
   };
 
+  // Get a menu item
   public MenuItem getItem(int index) {
     return items[index];
   }
