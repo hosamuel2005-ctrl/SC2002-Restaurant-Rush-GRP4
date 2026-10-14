@@ -1,11 +1,3 @@
-package restaurant.staff;
-
-import restaurant.customer.Customer;
-import restaurant.customer.CustomerState;
-import restaurant.customer.Table;
-import restaurant.kitchen.Order;
-import restaurant.util.Money;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
