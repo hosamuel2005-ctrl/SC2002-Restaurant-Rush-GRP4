@@ -1,7 +1,3 @@
-package restaurant.staff;
-
-import restaurant.util.Money;
-
 /**
  * Immutable receipt for one completed payment. The satisfaction is the value
  * recorded at the moment of payment, which is what the "average satisfaction
