@@ -87,15 +87,14 @@ Package names below are my assumption. If the team uses different packages, only
 
 Also needed from `Customer`: the eating step. After `markServed(t)`, a customer must become READY_TO_PAY on a later turn and record `getReadyToPayTurn()`. Whoever owns it (Jingyi or Samuel's loop), it must run once per turn in step 4.
 
-**Person 2 (Fang Fei): `restaurant.kitchen`**
+**Person 2 (Fang Fei): Menu / Order / Chef**
 
-| Class | Methods I call |
+| Class | Methods used by teammates |
 |---|---|
-| `Order` | constructor `Order(Customer, MenuItem, int billCents, int turnPlaced)`, `getId()`, `getItem()`, `getCustomer()`, `getStatus()`, `getBillCents()`, **`getReadyTurn()`** (turn the order became READY), `markServed()`, `markPaid()` |
-| `OrderStatus` | constant `READY` |
-| `MenuItem` | `getName()`, `getPriceCents()`, `getPrepUnits()` |
-| `Chef` | `receiveOrder(Order)` (the Waiter hands the new order to the kitchen) |
-| `Menu` | passed to `customer.chooseMenuItem(menu)` |
+| `Menu` | `getItem(int index)`, `getMenuSize()`, `displayMenu()` |
+| `MenuItem` | `getName()`, `getPrice()`, `getPreparationUnits()` |
+| `Order` | constructor `Order(MenuItem)`, `getItem()`, `getPrice()`, `getPreparedUnits()`, `getStatus()`, `isReady()`, `canPrepare()`, `prepareOneUnit()`, `markServed()`, `markPaid()`, `cancel()` |
+| `Chef` | `prepareOrder(Order)` |
 
 **Person 4 (Samuel): turn loop must do**
 
@@ -154,3 +153,56 @@ Stores customers who are waiting for a table.
 - `seatCustomer(id, table)` seats the chosen customer and removes them from the queue.
 - `removeAbandonedCustomers()` removes customers who have `LEFT`.
 - `getCustomers()` and `size()` let other classes view the queue.
+
+## Menu.java
+Stores the available dishes in the restaurant.
+
+- `getItem(int index)` returns a selected menu item.
+- `getMenuSize()` returns the number of available menu items.
+- `displayMenu()` displays all dishes with their price and required preparation units.
+
+The Stage 1 menu contains:
+- Salad - $9.00 - 1 preparation unit
+- Burger - $15.00 - 1 preparation unit
+- Pasta - $18.00 - 2 preparation units
+
+## MenuItem.java
+Represents one dish on the restaurant menu.
+
+Each menu item stores:
+- Name
+- Price in integer cents
+- Required preparation units
+
+Main methods:
+- `getName()` returns the item name.
+- `getPrice()` returns the price in cents.
+- `getPreparationUnits()` returns the required preparation units.
+- `displayInfo()` displays the menu item information.
+
+## Order.java
+Represents a customer's food order and tracks its preparation progress and status.
+
+An order starts with:
+- `preparedUnits = 0`
+- `status = WAITING_FOR_FOOD`
+
+Main methods:
+- `getItem()` returns the ordered menu item.
+- `getPrice()` returns the order price.
+- `getPreparedUnits()` returns the completed preparation units.
+- `getStatus()` returns the current order status.
+- `isReady()` checks whether the order is READY.
+- `canPrepare()` checks whether the order can still be prepared.
+- `prepareOneUnit()` advances preparation by one unit.
+- `markServed()` changes a READY order to SERVED.
+- `markPaid()` changes a SERVED order to PAID.
+- `cancel()` cancels an unpaid order.
+- `displayOrderInfo()` displays the order information.
+
+## Chef.java
+Represents the restaurant chef.
+
+- `prepareOrder(Order order)` prepares one unit of a selected order.
+- The method returns `false` if no valid order can be prepared.
+- The method returns `true` after one preparation unit is successfully completed.
