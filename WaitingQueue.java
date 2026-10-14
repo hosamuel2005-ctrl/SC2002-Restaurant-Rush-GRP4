@@ -3,7 +3,7 @@ import java.util.Collections;
 import java.util.List;
 
 // Customers waiting for a table
-public class Queue {
+public class WaitingQueue {
     // Internal waiting list
     private final List<Customer> customers = new ArrayList<>();
 
