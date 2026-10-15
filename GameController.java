@@ -4,31 +4,57 @@ import java.util.List;
 import java.util.Optional;
 
 public class GameController {
+    // === Game constants ===
+    // Maximum number of turns in the game
     private static final int MAX_TURNS = 18;
+
+    // Minimum number of paid customers required to win
     private static final int TARGET_PAID = 4;
+
+    // Minimum revenue required to win (in cents)
     private static final int TARGET_REVENUE = 4500;
+
+    // Minimum average satisfaction required to win
     private static final double TARGET_SATISFACTION = 60.0;
 
+    // === Game objects ===
+    // Handles communication with the player through the user interface
     private final GameUI ui;
+
+    // Stores the menu of available food items
     private final Menu menu = new Menu();
+
+    // Manages customers waiting to be seated
     private final WaitingQueue queue = new WaitingQueue();
+
+    // Creates a list of tables in the restaurant, each with a unique ID
     private final List<Table> tables = Arrays.asList(new Table(1), new Table(2));
+
+    // Stores all customers that have arrived during the game
     private final List<Customer> customers = new ArrayList<>();
 
+    // === Staff members ===
     private final Waiter waiter;
     private final Chef chef = new Chef();
     private final Cashier cashier = new Cashier();
 
+    // === Game state variables ===
+    // Tracks the current turn number
     private int currentTurn;
+
+    // Count the total number of customers served during the game
     private int servedCount;
+
+    // Count the total number of customers who left unsatisfied during the game
     private int nonsatisfiedLeave;
 
+    // Constructor initializes the game controller with the user interface and creates a waiter
     public GameController(GameUI ui) {
         this.ui = ui;
         this.waiter = new Waiter(menu);
     }
 
-    // Main game loop
+    // Main game loop 
     public void startGame() {
         ui.showMessage("Welcome to Restaurant Rush!");
         menu.displayMenu();
@@ -41,7 +67,7 @@ public class GameController {
         showGameResult();
     }
 
-    // Execute one complete turn
+    // Execute one turn
     private void playTurn() {
         // Step 1: Scheduled arrivals
         handleArrivals();
@@ -49,7 +75,8 @@ public class GameController {
         // Display current game state
         displayGameState();
 
-        // Step 2 & 3: Waiter acts before Chef
+        // Step 2 & 3: Manager assigns staff actions
+        // Waiter acts before Chef, according to the game rules
         handleWaiterAction();
         handleChefAction();
 
@@ -57,14 +84,14 @@ public class GameController {
         advanceEating();
         processPayment();
 
-        // Step 5: Satisfaction and abandonment
+        // Step 5: Reduce satisfaction for waiting customers and remove those who leave unsatisfied
         applySatisfactionPenalty();
 
         // Step 6: End of turn summary
         displayEndOfTurn();
     }
 
-    // Scheduled customer arrivals 
+    // Customer arrivals
     private void handleArrivals() {
         if (currentTurn == 1 ||
             currentTurn == 4 ||
@@ -72,6 +99,8 @@ public class GameController {
             currentTurn == 10 ||
             currentTurn == 13 ||
             currentTurn == 16) {
+                // Calculate customer ID based on the arrival turn.
+                // Turn 1 = ID 1, Turn 4 = ID 2...
                 int customerId = (currentTurn + 2) / 3;
                 Customer customer = new Customer(customerId);
                 customers.add(customer);
@@ -85,7 +114,8 @@ public class GameController {
         ui.showTurn(currentTurn);
         ui.showMessage("Revenue: " + Money.format(cashier.getRevenueCents()));
         ui.showMessage("Average satisfaction: " + averageText());
-
+        
+        // Waiting queue
         ui.showMessage("Waiting queue: ");
         if (queue.size() == 0) {
             ui.showMessage(" Empty");
@@ -95,6 +125,7 @@ public class GameController {
             }
         }
 
+        // Table information
         ui.showMessage("Tables: ");
         for (Table table : tables) {
             if (table.isFree()) {
@@ -107,6 +138,7 @@ public class GameController {
             }
         }
 
+        // Available staff tasks
         ui.showMessage("Available staff task:");
         boolean freeTable = false;
         for (Table table : tables) {
@@ -126,10 +158,10 @@ public class GameController {
                     ui.showMessage(" Waiter : take order from customer " + customer.getId());
                 }
                 if (customer.getState() == CustomerState.ORDERED && customer.getOrder() != null && customer.getOrder().isReady()) {
-                    ui.showMessage(" Waiter : serve custumer " + customer.getId());
+                    ui.showMessage(" Waiter : serve customer " + customer.getId());
                 } 
                 if (customer.getOrder() != null && customer.getOrder().canPrepare()) {
-                    ui.showMessage(" Chef : prepare custumer " + customer.getId() + "'s order");
+                    ui.showMessage(" Chef : prepare customer " + customer.getId() + "'s order");
                 }
             }
         }
@@ -137,7 +169,7 @@ public class GameController {
         ui.showMessage(" " + cashier.describeAvailableTask(currentTurn, tables));
     }
 
-    // Manager chooses waiter action
+    // Waiter action
     private void handleWaiterAction() {
         while (true) {
             ui.showWaiterMenu();
@@ -173,7 +205,7 @@ public class GameController {
         }
     }
 
-    // Manager chooses chef action
+    // Chef action
     private void handleChefAction() {
         while (true) {
             ui.showChefMenu();
@@ -198,6 +230,7 @@ public class GameController {
         }
     }
 
+    // Eating progess
     private void advanceEating() {
         for (Table table : tables) {
             if (!table.isFree() && table.getCustomer().finishEating(currentTurn)) {
@@ -206,6 +239,7 @@ public class GameController {
         }
     }
 
+    // Payment processing
     private void processPayment() {
         Optional<PaymentRecord> payment = cashier.processPayment(currentTurn, tables);
         if (payment.isPresent()) {
@@ -213,6 +247,7 @@ public class GameController {
         }
     }
 
+    // Apply satisfaction penalty for waiting customers and remove those who leave unsatisfied
     private void applySatisfactionPenalty() {
         for (Customer customer : customers) {
             if (customer.applyEndOfTurnPenalty()) {
@@ -230,6 +265,7 @@ public class GameController {
         }
     }
 
+    // Display game result at the end of the game
     private void showGameResult() {
         double average = cashier.getAverageSatisfaction().orElse(Double.NaN);
         boolean victory = cashier.getPaidCount() >= TARGET_PAID && cashier.getRevenueCents() >= TARGET_REVENUE && average >= TARGET_SATISFACTION;
@@ -240,6 +276,7 @@ public class GameController {
         ui.showMessage("Targets: 4 paid customers, $45.00 revenue, 60 average satisfaction.");
     }
 
+    // Helper methods to find customers and tables by ID, and to format average satisfaction
     private String averageText() {
         if (!cashier.getAverageSatisfaction().isPresent()) {
             return "N/A";
@@ -247,6 +284,7 @@ public class GameController {
         return String.format("%.1f", cashier.getAverageSatisfaction().getAsDouble());
     }
 
+    // Find a customer by ID from the list of customers
     private Customer findCustomer(int id) {
         for (Customer customer : customers) {
             if (customer.getId() == id) {
@@ -256,6 +294,7 @@ public class GameController {
         return null;
     }
 
+    // Find a table by ID from the list of tables
     private Table findTable(int id) {
         for (Table table : tables) {
             if (table.getId() == id) {
@@ -265,6 +304,7 @@ public class GameController {
         return null;
     }
 
+    // Display end-of-turn summary including served customers, unsatisfied departures, paid customers, revenue, and average satisfaction
     private void displayEndOfTurn() {
         ui.showMessage("\nEnd of turn " + currentTurn);
 
