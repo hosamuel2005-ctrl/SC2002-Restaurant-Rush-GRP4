@@ -30,7 +30,8 @@ public class GameUI {
 
     // Waiter action menu: diplay the available actions for the waiter
     public void showWaiterMenu() {
-        System.out.println("WAITER ACTION");
+        System.out.println();
+        System.out.println(" === WAITER ACTION === ");
         System.out.println("1. Seat customer");
         System.out.println("2. Take order");
         System.out.println("3. Serve ready order");
@@ -39,7 +40,8 @@ public class GameUI {
 
     // Chef action menu: display the available actions for the chef
     public void showChefMenu() {
-        System.out.println("CHEF ACTION");
+        System.out.println();
+        System.out.println(" === CHEF ACTION === ");
         System.out.println("1. Prepare an order");
         System.out.println("2. Wait");
     }
@@ -60,7 +62,7 @@ public class GameUI {
             scanner.nextLine();
 
             if (choice < min || choice > max) {
-                System.out.println("Chooise betweenm " + min + " and " + max + ".");
+                System.out.println("Choose between " + min + " and " + max + ".");
                 continue;
             }
 

@@ -16,9 +16,6 @@ public class Customer {
     // Create a new waiting customer
     public Customer(int id) {
         // IDs must be positive
-        if (id <= 0) {
-            throw new IllegalArgumentException("Customer ID must be positive.");
-        }
         this.id = id;
         this.satisfaction = 100;
         this.state = CustomerState.WAITING;
@@ -78,9 +75,6 @@ public class Customer {
     // Mark food as served
     public void markServed(int currentTurn) {
         // Turn numbers start at 1
-        if (currentTurn < 1) {
-            throw new IllegalArgumentException("Turn must be positive.");
-        }
         requireState(CustomerState.ORDERED);
         state = CustomerState.SERVED;
         servedTurn = currentTurn;
@@ -138,6 +132,6 @@ public class Customer {
     // Readable customer summary
     @Override
     public String toString() {
-        return "Customer " + id + " [" + state + ", satisfaction=" + satisfaction + "]";
+        return "Customer " + id + " [" + state + ", Satisfaction = " + satisfaction + "]";
     }
 }
