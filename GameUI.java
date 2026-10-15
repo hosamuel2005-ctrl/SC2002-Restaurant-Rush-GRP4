@@ -1,5 +1,6 @@
 import java.util.Scanner;
 
+// Handles all user interface interactions for the game, including displaying messages, menus, and reading user input.
 public class GameUI {
     private final Scanner scanner = new Scanner(System.in);
 
@@ -16,7 +17,7 @@ public class GameUI {
         System.out.println("==============================");
     }
 
-    // Display financial information
+    // Display game statistics
     public void showStats(int revenueCents, double avgSatisfaction) {
         System.out.println("Revenue: " + Money.format(revenueCents));
 
@@ -27,7 +28,7 @@ public class GameUI {
         }
     }
 
-    // Print the Waiter options
+    // Waiter action menu: diplay the available actions for the waiter
     public void showWaiterMenu() {
         System.out.println("WAITER ACTION");
         System.out.println("1. Seat customer");
@@ -36,7 +37,7 @@ public class GameUI {
         System.out.println("4. Wait");
     }
 
-    // Print the Chef options
+    // Chef action menu: display the available actions for the chef
     public void showChefMenu() {
         System.out.println("CHEF ACTION");
         System.out.println("1. Prepare an order");
@@ -44,6 +45,7 @@ public class GameUI {
     }
 
     // Read any integer within a range
+    // Keep asking until the player enters a valid integer within the specified range
     public int readInt(String prompt, int min, int max) {
         while(true) {
             System.out.print(prompt);
@@ -66,7 +68,7 @@ public class GameUI {
         }
     }
 
-    // Print the end-game result
+    // Display the final game result and statistics
     public void showResult(boolean victory, int paidCount, int revenueCents, int average) {
         System.out.println("\n==============================");
         System.out.println("GAME OVER");
