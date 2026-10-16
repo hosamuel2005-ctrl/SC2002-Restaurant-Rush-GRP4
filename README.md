@@ -15,7 +15,6 @@ A turn-based, command-line restaurant management game written in Java. You play 
 5. [Class reference](#5-class-reference)
 6. [Design notes](#6-design-notes)
 7. [Assumptions and known limitations](#7-assumptions-and-known-limitations)
-8. [Team](#8-team)
 
 ---
 
