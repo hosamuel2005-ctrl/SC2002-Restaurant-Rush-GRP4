@@ -272,8 +272,12 @@ public class GameController {
 
         ui.showMessage("\n=== GAME OVER ===");
         ui.showMessage(victory ? "VICTORY!" : "DEFEAT!");
-        displayEndOfTurn();
-        ui.showMessage("Targets: 4 paid customers, $45.00 revenue, 60 average satisfaction.");
+        ui.showMessage("Paid customers: " + cashier.getPaidCount());
+        ui.showMessage("Served customers: " + servedCount);
+        ui.showMessage("Unsatisfied departures: " + nonsatisfiedLeave);
+        ui.showMessage("Revenue: " + Money.format(cashier.getRevenueCents()));
+        ui.showMessage("Average satisfaction: " + averageText());
+        ui.showMessage("Targets: " + TARGET_PAID + " paid customers, " + Money.format(TARGET_REVENUE) + " revenue, " + TARGET_SATISFACTION + " average satisfaction.");
     }
 
     // Helper methods to find customers and tables by ID, and to format average satisfaction
