@@ -268,4 +268,4 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 
 [TEST_NOTES.md](TEST_NOTES.md) contains a complete 18-turn victory strategy, a defeat strategy, expected results, and PowerShell replay blocks with all inputs embedded directly in the document. Neither run needs separate input files, network access, or random seeds.
 
-Stage 1 includes only regular customers and the base restaurant operation. The `stage-1` tag should identify its verified runnable commit before Stage 2 work begins. Stage 2 and Stage 3 are not implemented yet; document each transition here with new/changed/deleted files, reasons, and commit or compare links when those stages are completed.
+Stage 1 includes only regular customers and the base restaurant operation.
