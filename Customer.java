@@ -16,6 +16,10 @@ public class Customer {
     // Create a new waiting customer
     public Customer(int id) {
         // IDs must be positive
+        if (id <= 0) {
+            throw new IllegalArgumentException("Customer ID must be positive.");
+        }
+
         this.id = id;
         this.satisfaction = 100;
         this.state = CustomerState.WAITING;
@@ -123,9 +127,7 @@ public class Customer {
     // Enforce valid state transitions
     private void requireState(CustomerState expected) {
         if (state != expected) {
-            throw new IllegalStateException(
-                "Customer " + id + " must be " + expected + ", but is " + state + "."
-            );
+            throw new IllegalStateException("Customer " + id + " must be " + expected + ", but is " + state + ".");
         }
     }
 

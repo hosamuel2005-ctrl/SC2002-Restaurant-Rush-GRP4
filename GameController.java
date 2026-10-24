@@ -57,7 +57,7 @@ public class GameController {
     // Main game loop 
     public void startGame() {
         ui.showMessage("Welcome to Restaurant Rush!");
-        menu.displayMenu();
+        ui.showMenu(menu);
 
         for (currentTurn = 1; currentTurn <= MAX_TURNS; currentTurn++) {
             playTurn();
@@ -218,13 +218,14 @@ public class GameController {
             int customerId = ui.readInt("Customer ID for preparation: ", 1, 6);
             Customer customer = findCustomer(customerId);
             Order order = customer == null ? null : customer.getOrder();
-
             if (customer == null || customer.getState() != CustomerState.ORDERED) {
                 ui.showMessage("Customer is not waiting for food.");
                 continue;
             }
 
-            if (chef.prepareOrder(order)) {
+            ActionResult result = chef.prepareOrder(order);
+            ui.showMessage(result.getMessage());
+            if (result.isSuccess()) {
                 return;
             }
         }

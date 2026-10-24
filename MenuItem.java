@@ -6,6 +6,19 @@ public class MenuItem {
 
     // Create a menu item
     public MenuItem(String name, int price, int preparationUnits) {
+        // Validate input parameters
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Item name cannot be null or empty.");
+        }
+        // Price cannot be negative
+        if (price < 0) {
+            throw new IllegalArgumentException("Price cannot be negative.");
+        }
+        // Preparation units must be positive
+        if (preparationUnits <= 0) {
+            throw new IllegalArgumentException("Preparation units must be positive.");
+        }
+
         this.name = name;
         this.price = price;
         this.preparationUnits = preparationUnits;
@@ -24,11 +37,5 @@ public class MenuItem {
     // Get required preparation units
     public int getPreparationUnits() {
         return preparationUnits;
-    }
-
-    // Display item information
-    public void displayInfo() {
-        System.out.println(name + " - " + Money.format(price)
-                + " - " + preparationUnits + " preparation unit(s)");
     }
 }

@@ -17,17 +17,6 @@ public class GameUI {
         System.out.println("==============================");
     }
 
-    // Display game statistics
-    public void showStats(int revenueCents, double avgSatisfaction) {
-        System.out.println("Revenue: " + Money.format(revenueCents));
-
-        if (Double.isNaN(avgSatisfaction)) {
-            System.out.println("Average satisfaction: N/A");
-        } else {
-            System.out.printf("Average satisfaction: %.1f%n", avgSatisfaction);
-        }
-    }
-
     // Waiter action menu: diplay the available actions for the waiter
     public void showWaiterMenu() {
         System.out.println();
@@ -46,11 +35,25 @@ public class GameUI {
         System.out.println("2. Wait");
     }
 
+    // Display the menu
+    public void showMenu(Menu menu) {
+        System.out.println("====RESTAURANT MENU====");
+
+        for (int i = 0; i < menu.getMenuSize(); i++) {
+            MenuItem item = menu.getItem(i);
+            showMessage((i + 1) + ". " + item.getName() + " - " + Money.format(item.getPrice()) + " - " + item.getPreparationUnits() + " preparation unit(s)");
+        }
+    }
+
     // Read any integer within a range
     // Keep asking until the player enters a valid integer within the specified range
     public int readInt(String prompt, int min, int max) {
         while(true) {
             System.out.print(prompt);
+
+            if (!scanner.hasNextLine()) {
+                throw new java.util.NoSuchElementException("Input closed.");
+            }
 
             if(!scanner.hasNextInt()) {
                 System.out.println("Invalid input. Enter a number.");
@@ -59,7 +62,9 @@ public class GameUI {
             }
 
             int choice = scanner.nextInt();
-            scanner.nextLine();
+            if (scanner.hasNextLine()) {
+                scanner.nextLine();
+            }
 
             if (choice < min || choice > max) {
                 System.out.println("Choose between " + min + " and " + max + ".");
@@ -68,17 +73,5 @@ public class GameUI {
 
             return choice;
         }
-    }
-
-    // Display the final game result and statistics
-    public void showResult(boolean victory, int paidCount, int revenueCents, int average) {
-        System.out.println("\n==============================");
-        System.out.println("GAME OVER");
-        System.out.println("==============================");
-
-        System.out.println(victory ? "VICTORY!" : "DEFEAT!");
-
-        System.out.println("Paid customers: " + paidCount);
-        showStats(revenueCents, average);
     }
 }

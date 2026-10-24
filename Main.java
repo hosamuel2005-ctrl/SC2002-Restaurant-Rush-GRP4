@@ -4,6 +4,10 @@ public class Main {
         GameUI ui = new GameUI();
         GameController game = new GameController(ui);
 
-        game.startGame();
+        try {
+            game.startGame();
+        } catch (java.util.NoSuchElementException e) {
+            ui.showMessage("\nInput closed. Exiting the game.");
+        }
     }
 }

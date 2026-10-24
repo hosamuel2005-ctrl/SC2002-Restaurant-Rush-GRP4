@@ -1,14 +1,18 @@
 public class Order {
 
-    private MenuItem item;
+    private final MenuItem item;
     private int preparedUnits;
-    private String status;
+    private OrderStatus status;
 
     // Create an order
     public Order(MenuItem item) {
+        // Menu item cannot be null
+        if (item == null) {
+            throw new IllegalArgumentException("Item cannot be null.");
+        }
         this.item = item;
         this.preparedUnits = 0;
-        this.status = "WAITING_FOR_FOOD";
+        this.status = OrderStatus.WAITING_FOR_FOOD;
     }
 
     // Get ordered menu item
@@ -27,34 +31,30 @@ public class Order {
     }
 
     // Get current order status
-    public String getStatus() {
+    public OrderStatus getStatus() {
         return status;
     }
 
     // Check whether order is ready
     public boolean isReady() {
-        return status.equals("READY");
+        return status == OrderStatus.READY;
     }
 
     // Check whether order can be prepared
     public boolean canPrepare() {
-        return status.equals("WAITING_FOR_FOOD");
+        return status == OrderStatus.WAITING_FOR_FOOD;
     }
 
     // Prepare one unit of the order
     public void prepareOneUnit() {
         if (!canPrepare()) {
-            System.out.println("This order cannot be prepared");
-            return;
+            throw new IllegalStateException("Order cannot be prepared.");
         }
 
         preparedUnits++;
 
         if (preparedUnits >= item.getPreparationUnits()) {
-            status = "READY";
-            System.out.println(item.getName() + " is READY.");
-        } else {
-            System.out.println(item.getName() + " preparation progress: " + preparedUnits + "/" + item.getPreparationUnits());
+            status = OrderStatus.READY;
         }
     }
 
@@ -63,31 +63,21 @@ public class Order {
         if (!isReady()) {
             throw new IllegalStateException("Order is not ready.");
         }
-        status = "SERVED";
+        status = OrderStatus.SERVED;
     }
 
     // Mark order as paid
     public void markPaid() {
-        if (!status.equals("SERVED")) {
+        if (!status.equals(OrderStatus.SERVED)) {
             throw new IllegalStateException("Order has not been served.");
         }
-        status = "PAID";
+        status = OrderStatus.PAID;
     }
 
     // Cancel an unpaid order
     public void cancel() {
-        if (!status.equals("PAID")) {
-            status = "CANCELLED";
+        if (!status.equals(OrderStatus.PAID)) {
+            status = OrderStatus.CANCELLED;
         }
-    }
-
-    
-
-    // Display order information
-    public void displayOrderInfo() {
-        System.out.println("Item: " + item.getName());
-        System.out.println("Progress: " + preparedUnits + "/"
-                + item.getPreparationUnits());
-        System.out.println("Status: " + status);
     }
 }

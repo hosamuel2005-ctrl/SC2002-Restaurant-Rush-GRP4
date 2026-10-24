@@ -4,6 +4,10 @@ A turn-based, command-line restaurant management game written in Java. You play 
 
 **Current status:** Stage 1 (base setting) only.
 
+Repository: [SC2002-Restaurant-Rush-GRP4](https://github.com/hosamuel2005-ctrl/SC2002-Restaurant-Rush-GRP4).
+
+Reproducible victory and defeat runs: [TEST_NOTES.md](TEST_NOTES.md).
+
 ---
 
 ## Contents
@@ -15,6 +19,7 @@ A turn-based, command-line restaurant management game written in Java. You play 
 5. [Class reference](#5-class-reference)
 6. [Design notes](#6-design-notes)
 7. [Assumptions and known limitations](#7-assumptions-and-known-limitations)
+8. [Testing and stage history](#8-testing-and-stage-history)
 
 ---
 
@@ -22,13 +27,13 @@ A turn-based, command-line restaurant management game written in Java. You play 
 
 Requires JDK 8 or later. There are no external libraries, and all files sit in the default package in one folder.
 
-```bash
-mkdir -p out
+```powershell
+New-Item -ItemType Directory -Force out | Out-Null
 javac -d out *.java
 java -cp out Main
 ```
 
-The game starts immediately and reads from standard input.
+These commands run from the project root in PowerShell. On Bash, use `mkdir -p out` for the first command. The game starts immediately and reads from standard input.
 
 ---
 
@@ -122,7 +127,7 @@ Each turn the game prints the current state: turn number, revenue, average satis
 | 1 | Prepare an order | Customer ID |
 | 2 | Wait | none |
 
-Input is validated: non-numbers and out-of-range values are rejected and re-asked. Customer IDs accept 1 to 6 and table IDs 1 to 2. The Cashier needs no input.
+Input is validated: non-numbers and out-of-range values are rejected and re-asked. Customer IDs accept 1 to 6 and table IDs 1 to 2. The Cashier needs no input. If standard input closes, the application prints `Input closed. Exiting the game.` and exits without a stack trace.
 
 **Tips**
 
@@ -148,13 +153,15 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 ├── Menu.java             # the three Stage 1 dishes
 ├── MenuItem.java         # name, price (cents), preparation units
 ├── Order.java            # preparation progress and order status
+├── OrderStatus.java      # enum of order states
 │
 ├── Waiter.java           # seat / take order / serve / wait
 ├── Chef.java             # prepares one unit of an order
 ├── Cashier.java          # automatic payment, revenue, satisfaction totals
 ├── ActionResult.java     # success/failure + message from staff actions
 ├── PaymentRecord.java    # immutable receipt for one payment
-└── Money.java            # cents -> "$18.00"
+├── Money.java            # cents -> "$18.00"
+└── TEST_NOTES.md         # embedded replay inputs and expected Stage 1 results
 ```
 
 ---
@@ -163,11 +170,11 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 
 ### Game flow
 
-**`Main`**: creates a `GameUI` and a `GameController`, then calls `startGame()`.
+**`Main`**: creates a `GameUI` and a `GameController`, then calls `startGame()`. Handles closed input and displays a clean exit message through the UI.
 
 **`GameController`**: owns the menu, queue, two tables, customer list and the three staff members, and runs the 18-turn loop. Game constants are `MAX_TURNS = 18`, `TARGET_PAID = 4`, `TARGET_REVENUE = 4500` (cents) and `TARGET_SATISFACTION = 60.0`. Each turn it calls `handleArrivals`, `displayGameState`, `handleWaiterAction`, `handleChefAction`, `advanceEating`, `processPayment`, `applySatisfactionPenalty` and `displayEndOfTurn`. After turn 18 it prints VICTORY or DEFEAT.
 
-**`GameUI`**: wraps a `Scanner`. `readInt(prompt, min, max)` loops until the player enters a valid integer in range. It also prints the turn banner and the Waiter and Chef menus.
+**`GameUI`**: wraps a `Scanner`. `readInt(prompt, min, max)` loops until the player enters a valid integer in range, or throws `NoSuchElementException` when input closes. It displays messages, the turn banner, the food menu through `showMenu(menu)`, and the Waiter and Chef menus. Console input and output are kept here.
 
 ### Customers and tables
 
@@ -192,13 +199,15 @@ Invalid transitions throw `IllegalStateException`, so the Waiter and Cashier che
 
 ### Food
 
-**`Menu`**: `getItem(index)`, `getMenuSize()`, `displayMenu()`.
+**`Menu`**: holds the three dishes; exposes `getItem(index)` and `getMenuSize()`. The UI displays the menu.
 
-**`MenuItem`**: name, price in integer cents, preparation units, plus `displayInfo()`.
+**`MenuItem`**: immutable name, price in integer cents, and preparation units. Rejects null or empty names, negative prices, and non-positive preparation units.
 
-**`Order`**: starts at 0 prepared units with status `WAITING_FOR_FOOD`. `prepareOneUnit()` advances progress and flips the status to `READY` once the required units are done. `markServed()` (requires `READY`), `markPaid()` (requires `SERVED`) and `cancel()` (anything not yet `PAID`) move it along. Helpers: `isReady()`, `canPrepare()`, `getItem()`, `getPrice()`, `getPreparedUnits()`, `getStatus()`, `displayOrderInfo()`.
+**`Order`**: holds a non-null, final menu item and starts at 0 prepared units with status `WAITING_FOR_FOOD`. `prepareOneUnit()` advances progress and flips the status to `READY` once the required units are done. `markServed()` (requires `READY`), `markPaid()` (requires `SERVED`) and `cancel()` (anything not yet `PAID`) move it along. Helpers: `isReady()`, `canPrepare()`, `getItem()`, `getPrice()`, `getPreparedUnits()`, `getStatus()`. Contains no console output.
 
-**`Chef`**: `prepareOrder(order)` does one unit of work and returns `true`, or returns `false` if the order is null or can no longer be prepared.
+**`OrderStatus`**: enum containing `WAITING_FOR_FOOD`, `READY`, `SERVED`, `PAID`, and `CANCELLED`.
+
+**`Chef`**: `prepareOrder(order)` returns an `ActionResult`. On success it prepares one unit and reports progress or readiness; on failure it explains why the order cannot be prepared. The controller passes the message to the UI.
 
 ### Staff
 
@@ -237,7 +246,7 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 
 - **Separation of concerns.** `GameController` drives the turn loop, `GameUI` handles I/O, and domain classes (`Customer`, `Table`, `Order`, staff) hold their own state and rules.
 - **Fail softly, not loudly.** Player mistakes return a failed `ActionResult`. Exceptions are reserved for programming errors such as illegal state transitions.
-- **State machines.** `Customer` and `Order` both enforce legal transitions, so the game cannot reach an inconsistent state (for example paying for food that was never served).
+- **State machines.** `CustomerState` and `OrderStatus` represent lifecycle states. Transition checks in the domain classes and staff actions protect the normal game flow from invalid actions such as paying before service.
 - **Integer money.** Prices, bills and revenue are `int` cents. `Money.format` is the only place dollars appear.
 - **Timing is explicit.** "Next turn at the earliest" rules are implemented with turn comparisons (`currentTurn > servedTurn`, `readyToPayTurn < turn`) rather than by relying on call order.
 
@@ -249,7 +258,14 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 - **Dish choice is deterministic** (by customer ID) rather than random, which keeps runs reproducible.
 - **Same-turn serving** is prevented by the turn order (Waiter before Chef), not by a separate check inside `Waiter.serveOrder`.
 - **One task per turn** is enforced by the controller loop, which returns after the first successful Waiter or Chef action. The `Waiter` class itself does not track it.
-- **`Order` status is a `String`** rather than an enum, and `Order` and `Chef` print directly to the console instead of returning messages.
-- **Unused UI helpers.** `GameUI.showStats` and `GameUI.showResult` are not called by the controller, which formats its own summary.
-- **No automated tests** are included. Stage 1 has only been checked by playing through it.
+- **Locale-dependent display.** Average satisfaction may display as `79.2` or `79,2`, depending on the machine's locale.
+- **Replay coverage.** The documented victory and defeat replays cover complete games but do not exhaust every possible action sequence. No permanent automated unit-test suite is included.
 - Only Stage 1 is implemented.
+
+---
+
+## 8. Testing and stage history
+
+[TEST_NOTES.md](TEST_NOTES.md) contains a complete 18-turn victory strategy, a defeat strategy, expected results, and PowerShell replay blocks with all inputs embedded directly in the document. Neither run needs separate input files, network access, or random seeds.
+
+Stage 1 includes only regular customers and the base restaurant operation. The `stage-1` tag should identify its verified runnable commit before Stage 2 work begins. Stage 2 and Stage 3 are not implemented yet; document each transition here with new/changed/deleted files, reasons, and commit or compare links when those stages are completed.
