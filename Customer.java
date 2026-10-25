@@ -59,6 +59,22 @@ public class Customer {
         return 8;
     }
 
+    // Price in cents; subclasses may apply a discount.
+    public int calculatePrice(int basePrice) {
+        if (basePrice < 0) {
+            throw new IllegalArgumentException("Price cannot be negative.");
+        }
+        return basePrice;
+    }
+
+    // Default deterministic menu selection.
+    public int chooseMenuItemIndex(int menuSize) {
+        if (menuSize <= 0) {
+            throw new IllegalArgumentException("Menu size must be positive.");
+        }
+        return (getId() - 1) % menuSize;
+    }
+
     // Move from waiting to seated
     public void seat() {
         requireState(CustomerState.WAITING);
