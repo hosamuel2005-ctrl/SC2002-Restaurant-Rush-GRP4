@@ -4,49 +4,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 
-/**
- * The Cashier. Stage 1 base setting: exactly one Cashier who handles at most
- * ONE payment per turn, automatically (no manager choice).
- *
- * Rules implemented (Section 3.2 step 4 and 3.4):
- * <ul>
- *   <li>Only READY_TO_PAY customers can be charged.</li>
- *   <li>A customer who became READY_TO_PAY this turn pays next turn at the
- *       earliest (checked with {@code getReadyToPayTurn() < turn}, so the result
- *       does not depend on whether eating is advanced before or after payment).</li>
- *   <li>Oldest first: the customer who has been READY_TO_PAY the longest is
- *       charged first; ties go to the lower customer id (earlier arrival).</li>
- *   <li>Payment adds the bill to revenue, marks the customer and the order PAID,
- *       and frees the table.</li>
- *   <li>Revenue only ever grows through {@link #processPayment}, so unpaid or
- *       abandoned orders can never be counted.</li>
- * </ul>
- *
- * The Cashier also owns the running totals the end-of-game check needs: revenue,
- * paid count and the satisfaction recorded at the moment each customer paid.
- */
 public class Cashier {
-
-    private int lastPaymentTurn = 0;          // turns start at 1
+    // Turns start at 1
+    private int lastPaymentTurn = 0;
     private int revenueCents = 0;
     private int satisfactionTotal = 0;
     private final List<PaymentRecord> records = new ArrayList<>();
 
-    // ------------------------------------------------------------------
-    // Step 4: automatic payment
-    // ------------------------------------------------------------------
-
-    /**
-     * Collects payment from at most one customer this turn.
-     *
-     * @param turn   the current turn number (1-18)
-     * @param tables all tables; customers waiting to pay are seated at them
-     * @return the receipt, or empty if nobody could be charged this turn
-     *         (nobody READY_TO_PAY yet, or the Cashier already charged someone this turn)
-     */
+    // Charge at most one customer per turn; the bill is already locked in the order
     public Optional<PaymentRecord> processPayment(int turn, List<Table> tables) {
+        requireValid(turn, tables);
         if (turn == lastPaymentTurn) {
-            return Optional.empty();           // one payment per turn
+            return Optional.empty();
         }
         Table table = findNextTableToPay(turn, tables);
         if (table == null) {
@@ -56,7 +25,7 @@ public class Cashier {
         Customer customer = table.getCustomer();
         Order order = customer.getOrder();
 
-        // Read everything we need BEFORE freeing the table / changing states.
+        // Read everything before the table is freed
         int bill = order.getPrice();
         int satisfaction = customer.getSatisfaction();
         PaymentRecord record = new PaymentRecord(turn, customer.getId(), table.getId(),
@@ -73,12 +42,9 @@ public class Cashier {
         return Optional.of(record);
     }
 
-    // ------------------------------------------------------------------
-    // Queries for the display and the end-of-game check
-    // ------------------------------------------------------------------
-
-    /** Customer the Cashier would charge on this turn, if any (does not charge). */
+    // Customer who would be charged this turn, without charging
     public Optional<Customer> previewNextPayer(int turn, List<Table> tables) {
+        requireValid(turn, tables);
         if (turn == lastPaymentTurn) {
             return Optional.empty();
         }
@@ -86,36 +52,34 @@ public class Cashier {
         return table == null ? Optional.empty() : Optional.of(table.getCustomer());
     }
 
-    /** Line for the "staff tasks available" part of the start-of-turn display. */
+    // Line for the available staff tasks display
     public String describeAvailableTask(int turn, List<Table> tables) {
         Optional<Customer> next = previewNextPayer(turn, tables);
         if (next.isPresent()) {
             Customer c = next.get();
-            return "Cashier will collect " + Money.format(c.getOrder().getPrice())
+            Order order = c.getOrder();
+            return "Cashier will collect " + Money.format(order.getPrice())
+                    + describeDiscount(order)
                     + " from customer #" + c.getId() + " automatically.";
         }
         return "Cashier: no customer ready to pay.";
     }
 
-    /** Total revenue in cents. Includes paid orders only. */
+    // Revenue from paid orders only
     public int getRevenueCents() {
         return revenueCents;
     }
 
-    /** Number of customers who have paid. */
     public int getPaidCount() {
         return records.size();
     }
 
-    /** Sum of the satisfaction values recorded at payment time. */
+    // Sum of satisfaction recorded at payment
     public int getSatisfactionTotal() {
         return satisfactionTotal;
     }
 
-    /**
-     * Average satisfaction of paid customers, using the value recorded when each
-     * paid. Empty when nobody has paid yet (the display shows "N/A").
-     */
+    // Empty when nobody has paid yet
     public OptionalDouble getAverageSatisfaction() {
         if (records.isEmpty()) {
             return OptionalDouble.empty();
@@ -123,16 +87,26 @@ public class Cashier {
         return OptionalDouble.of((double) satisfactionTotal / records.size());
     }
 
-    /** Read-only list of all receipts, in payment order. */
     public List<PaymentRecord> getPaymentHistory() {
         return Collections.unmodifiableList(records);
     }
 
-    // ------------------------------------------------------------------
-    // Private helpers
-    // ------------------------------------------------------------------
+    private void requireValid(int turn, List<Table> tables) {
+        if (turn < 1) {
+            throw new IllegalArgumentException("Turn must be at least 1.");
+        }
+        if (tables == null) {
+            throw new IllegalArgumentException("Tables cannot be null.");
+        }
+    }
 
-    /** Oldest-first table whose customer may be charged this turn, or null. */
+    // Empty text when the bill equals the menu price
+    private String describeDiscount(Order order) {
+        int saved = order.getItem().getPrice() - order.getPrice();
+        return saved > 0 ? " (discount applied: " + Money.format(saved) + ")" : "";
+    }
+
+    // Oldest-first table that can be charged this turn, or null
     private Table findNextTableToPay(int turn, List<Table> tables) {
         Table best = null;
         for (Table t : tables) {
@@ -146,13 +120,14 @@ public class Cashier {
         return best;
     }
 
+    // A customer who became READY_TO_PAY this turn pays next turn at the earliest
     private boolean canCharge(Customer c, int turn) {
         return c.getState() == CustomerState.READY_TO_PAY
                 && c.getOrder() != null
                 && c.getReadyToPayTurn() < turn;
     }
 
-    /** a has been waiting to pay longer than b (ties: lower id = earlier arrival). */
+    // Longer waiting to pay comes first, ties go to the lower id
     private boolean isOlder(Customer a, Customer b) {
         if (a.getReadyToPayTurn() != b.getReadyToPayTurn()) {
             return a.getReadyToPayTurn() < b.getReadyToPayTurn();
