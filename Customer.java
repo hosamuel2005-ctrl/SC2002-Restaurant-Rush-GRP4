@@ -2,14 +2,19 @@
 public class Customer {
     // Unique customer ID
     private final int id;
+
     // Current satisfaction score
     private int satisfaction;
+
     // Current customer stage
     private CustomerState state;
+
     // Turn when food was served
     private int servedTurn;
+
     // Turn when payment became possible
     private int readyToPayTurn;
+
     // Order placed by the customer
     private Order order;
 
@@ -23,8 +28,10 @@ public class Customer {
         this.id = id;
         this.satisfaction = 100;
         this.state = CustomerState.WAITING;
+
         // -1 = not served yet
         this.servedTurn = -1;
+
         // -1 = not ready to pay yet
         this.readyToPayTurn = -1;
     }
@@ -54,9 +61,23 @@ public class Customer {
         return readyToPayTurn;
     }
 
-    // Stage 1 satisfaction loss per turn
+    // Satisfaction loss per turn
     public int getSatisfactionLossPerTurn() {
         return 8;
+    }
+
+    // Calculate the final price for this customer
+    public int calculatePrice(int basePrice) {
+        return basePrice;
+    }
+
+    // Choose a menu item using a deterministic rule
+    public int chooseMenuItemIndex(int menuSize) {
+        if (menuSize <= 0) {
+            throw new IllegalArgumentException("Menu size must be positive.");
+        }
+
+        return (id - 1) % menuSize;
     }
 
     // Move from waiting to seated
@@ -72,14 +93,15 @@ public class Customer {
         if (order == null) {
             throw new IllegalArgumentException("Order cannot be null.");
         }
+
         this.order = order;
         state = CustomerState.ORDERED;
     }
 
     // Mark food as served
     public void markServed(int currentTurn) {
-        // Turn numbers start at 1
         requireState(CustomerState.ORDERED);
+
         state = CustomerState.SERVED;
         servedTurn = currentTurn;
     }
@@ -91,6 +113,7 @@ public class Customer {
             readyToPayTurn = currentTurn;
             return true;
         }
+
         return false;
     }
 
@@ -110,7 +133,9 @@ public class Customer {
         }
 
         // Keep satisfaction at or above zero
-        satisfaction = Math.max(0, satisfaction - getSatisfactionLossPerTurn());
+        satisfaction = Math.max(0,
+                satisfaction - getSatisfactionLossPerTurn());
+
         if (satisfaction == 0) {
             // Customer leaves at zero satisfaction
             state = CustomerState.LEFT;
@@ -119,21 +144,27 @@ public class Customer {
             if (order != null) {
                 order.cancel();
             }
+
             return true;
         }
+
         return false;
     }
 
     // Enforce valid state transitions
     private void requireState(CustomerState expected) {
         if (state != expected) {
-            throw new IllegalStateException("Customer " + id + " must be " + expected + ", but is " + state + ".");
+            throw new IllegalStateException(
+                    "Customer " + id + " must be "
+                    + expected + ", but is " + state + ".");
         }
     }
 
     // Readable customer summary
     @Override
     public String toString() {
-        return "Customer " + id + " [" + state + ", Satisfaction = " + satisfaction + "]";
+        return "Customer " + id
+                + " [" + state
+                + ", Satisfaction = " + satisfaction + "]";
     }
 }
