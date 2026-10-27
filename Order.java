@@ -3,14 +3,20 @@ public class Order {
     private final MenuItem item;
     private int preparedUnits;
     private OrderStatus status;
+    private final int price;
 
     // Create an order
-    public Order(MenuItem item) {
-        // Menu item cannot be null
+    public Order(MenuItem item, Customer customer) {
         if (item == null) {
             throw new IllegalArgumentException("Item cannot be null.");
         }
+
+        if (customer == null) {
+            throw new IllegalArgumentException("Customer cannot be null.");
+        }
+
         this.item = item;
+        this.price = customer.calculatePrice(item.getPrice());
         this.preparedUnits = 0;
         this.status = OrderStatus.WAITING_FOR_FOOD;
     }
@@ -20,9 +26,9 @@ public class Order {
         return item;
     }
 
-    // Get order price
+    // Get locked order price
     public int getPrice() {
-        return item.getPrice();
+        return price;
     }
 
     // Get completed preparation units
@@ -63,20 +69,22 @@ public class Order {
         if (!isReady()) {
             throw new IllegalStateException("Order is not ready.");
         }
+
         status = OrderStatus.SERVED;
     }
 
     // Mark order as paid
     public void markPaid() {
-        if (!status.equals(OrderStatus.SERVED)) {
+        if (status != OrderStatus.SERVED) {
             throw new IllegalStateException("Order has not been served.");
         }
+
         status = OrderStatus.PAID;
     }
 
     // Cancel an unpaid order
     public void cancel() {
-        if (!status.equals(OrderStatus.PAID)) {
+        if (status != OrderStatus.PAID) {
             status = OrderStatus.CANCELLED;
         }
     }
