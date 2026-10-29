@@ -102,11 +102,25 @@ public class GameController {
                 // Calculate customer ID based on the arrival turn.
                 // Turn 1 = ID 1, Turn 4 = ID 2...
                 int customerId = (currentTurn + 2) / 3;
-                Customer customer = new Customer(customerId);
+                Customer customer = createCustomer(customerId);
                 customers.add(customer);
                 queue.addCustomer(customer);
-                ui.showMessage("Customer " + customerId + " arrived!");
+                ui.showMessage(customer.getClass().getSimpleName() + " " + customerId + " arrived!");
             }
+    }
+
+    // Create a customer based on the customer ID, cycling through different customer types
+    private Customer createCustomer(int customerId) {
+        switch ((customerId - 1) % 3){
+            case 0:
+                return new Customer(customerId);
+            case 1:
+                return new VIPCustomer(customerId);
+            case 2:
+                return new CriticCustomer(customerId);
+            default:
+                throw new IllegalArgumentException("Invalid customer ID: " + customerId); 
+        }
     }
 
     // Display game state

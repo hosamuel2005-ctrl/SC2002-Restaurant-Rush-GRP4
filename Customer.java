@@ -163,7 +163,7 @@ public class Customer {
     // Readable customer summary
     @Override
     public String toString() {
-        return "Customer " + id
+        return getClass().getSimpleName() + " " + id
                 + " [" + state
                 + ", Satisfaction = " + satisfaction + "]";
     }

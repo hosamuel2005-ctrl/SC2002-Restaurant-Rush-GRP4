@@ -1,8 +1,9 @@
-# Stage 1 test notes
+# Stage 2 test notes
 
-Verified on 24 October 2026 using the base setting and the current Stage 1 source.
+Verified on 29 October 2026 using the current source with regular, VIP and critic customers.
 The two runs below exercise the real `Main` console interface for all 18 turns.
 Customer food choices are deterministic; no network connection or seed is needed.
+Customers 1 and 4 are regular, 2 and 5 are VIPs, and 3 and 6 are critics.
 
 ## Build and replay
 
@@ -128,24 +129,25 @@ VICTORY!
 Paid customers: 5
 Served customers: 5
 Unsatisfied departures: 0
-Revenue: $66.00
-Average satisfaction: 79.2
+Revenue: $63.00
+Average satisfaction: 79.8
 Targets: 4 paid customers, $45.00 revenue, 60.0 average satisfaction.
 ```
 
-The machine's locale may render the average as `79,2`; this is the same value.
+The machine's locale may render the average as `79,8`; this is the same value.
 
 Checkpoints:
 
 | Customer | Dish | Served turn | Payment turn | Satisfaction at payment | Bill |
 |---|---|---|---|---|---|
 | 1 | Salad | 3 | 5 | 84 | $9.00 |
-| 2 | Burger | 6 | 8 | 84 | $15.00 |
-| 3 | Pasta | 10 | 12 | 76 | $18.00 |
+| 2 | Burger | 6 | 8 | 90 | $13.50 |
+| 3 | Pasta | 10 | 12 | 64 | $18.00 |
 | 4 | Salad | 13 | 15 | 76 | $9.00 |
-| 5 | Burger | 16 | 18 | 76 | $15.00 |
+| 5 | Burger | 16 | 18 | 85 | $13.50 |
 
-Revenue is $66.00 and average satisfaction is `(84 + 84 + 76 + 76 + 76) / 5 = 79.2`.
+Revenue is $63.00 and average satisfaction is `(84 + 90 + 64 + 76 + 85) / 5 = 79.8`.
+VIP customers 2 and 5 receive a 10% discount on their Burger orders.
 All three targets are met. Customer 6 arrives on turn 16 and cannot pay before
 the game ends; their unpaid Pasta order contributes no revenue. Pasta for
 customer 3 takes two Chef turns and is served on the turn after it becomes READY.
@@ -212,7 +214,8 @@ Average satisfaction: N/A
 Targets: 4 paid customers, $45.00 revenue, 60.0 average satisfaction.
 ```
 
-Customer 1 leaves on turn 13 and customer 2 on turn 16, after 13 penalties each.
+Customer 1 leaves on turn 13 after 13 penalties of 8 satisfaction each, and
+critic customer 3 leaves on turn 15 after 9 penalties of 12 satisfaction each.
 The remaining customers have not reached zero satisfaction by turn 18. The game
 still completes all 18 turns and fails the victory criteria.
 

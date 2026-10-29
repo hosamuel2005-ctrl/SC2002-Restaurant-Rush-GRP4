@@ -2,7 +2,7 @@
 
 A turn-based, command-line restaurant management game written in Java. You play the manager: each turn you tell the **Waiter** and the **Chef** what to do, the **Cashier** collects payments automatically, and customers lose patience the longer they wait. Survive 18 turns and hit all three targets to win.
 
-**Current status:** Stage 1 (base setting) only.
+**Current status:** Stage 2 - Base restaurant gameplay with regular, VIP and Critic customers.
 
 Repository: [SC2002-Restaurant-Rush-GRP4](https://github.com/hosamuel2005-ctrl/SC2002-Restaurant-Rush-GRP4).
 
@@ -57,7 +57,17 @@ These commands run from the project root in PowerShell. On Bash, use `mkdir -p o
 | Burger | $15.00 | 1 |
 | Pasta | $18.00 | 2 |
 
-Customers choose their own food. In this implementation the choice is deterministic: customer *n* orders menu item `(n - 1) mod 3`, so customers 1 to 6 order Salad, Burger, Pasta, Salad, Burger, Pasta.
+Customers choose their own food based on deterministic rules.
+
+| Type | Customer ID | Satisfaction loss per waiting turn | Menu selection | Pricing |
+|---|---|---|---|---|
+| Regular | 1, 4 | 8 | `(id - 1) % menuSize` | Full Price |
+| VIP | 2, 5 | 5 | `(id - 1) % menuSize` | 10% discount, rounded to the nearest cent |
+| Critic | 3, 6 | 12 | Last menu item | Full price |
+
+With the current menu, customers 1-6 order Saled, Burger, Pasta, Salad, Burger and Pasta respectively.
+The final customer-specific price is calculated and stored when the order is created. Payment uses this stored price.
+
 
 ### Win condition
 
@@ -77,7 +87,7 @@ Each turn runs these steps in order:
 2. **Waiter**: the manager picks one action (seat, take order, serve, or wait).
 3. **Chef**: the manager picks one action (prepare one unit of an order, or wait).
 4. **Eating and payment**: customers who were served on an earlier turn finish eating and become ready to pay, then the Cashier charges at most one customer.
-5. **Satisfaction penalty**: every customer still waiting for a table, an order taker or food loses 8 satisfaction. At 0 they leave, their order is cancelled and their table is freed.
+5. **Satisfaction penalty**: satisfaction drops in `WAITING`, `SEATED` and `ORDERED`: regular customers lose 8 per turn, VIPs lose 5, and critics lose 12. It stops dropping once food is served. Starting from 100, an unserved regular customer leaves after 13 penalties, a VIP after 20, and a critic after 9. Departure cancels any existing order and frees the customer's table. 
 6. **End-of-turn summary**: served, unsatisfied departures, paid count, revenue, average satisfaction.
 
 ### Timing rules
@@ -189,6 +199,10 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 | `markPaid()` | `READY_TO_PAY` to `PAID` |
 | `applyEndOfTurnPenalty()` | subtracts 8 while waiting; at 0 sets `LEFT`, cancels the order, returns `true` |
 
+**`VIPCustomer`**: extends `Customer`, loses 5 satisfaction per waiting turn and receives a 10% discount.
+
+**`CriticCustomer`**: extends `Customer`, loses 12 satisfaction per waiting turn and chooses the last menu item.
+
 Invalid transitions throw `IllegalStateException`, so the Waiter and Cashier check state first.
 
 **`CustomerState`**: `WAITING`, `SEATED`, `ORDERED`, `SERVED`, `READY_TO_PAY`, `PAID`, `LEFT`.
@@ -203,7 +217,7 @@ Invalid transitions throw `IllegalStateException`, so the Waiter and Cashier che
 
 **`MenuItem`**: immutable name, price in integer cents, and preparation units. Rejects null or empty names, negative prices, and non-positive preparation units.
 
-**`Order`**: holds a non-null, final menu item and starts at 0 prepared units with status `WAITING_FOR_FOOD`. `prepareOneUnit()` advances progress and flips the status to `READY` once the required units are done. `markServed()` (requires `READY`), `markPaid()` (requires `SERVED`) and `cancel()` (anything not yet `PAID`) move it along. Helpers: `isReady()`, `canPrepare()`, `getItem()`, `getPrice()`, `getPreparedUnits()`, `getStatus()`. Contains no console output.
+**`Order`**: constructed with a non-null menu item and customer. It stores the final customer-specific price at creation and starts at 0 prepared units with status `WAITING_FOR_FOOD`. Holds a non-null, final menu item and starts at 0 prepared units with status `WAITING_FOR_FOOD`. `prepareOneUnit()` advances progress and flips the status to `READY` once the required units are done. `markServed()` (requires `READY`), `markPaid()` (requires `SERVED`) and `cancel()` (anything not yet `PAID`) move it along. Helpers: `isReady()`, `canPrepare()`, `getItem()`, `getPrice()`, `getPreparedUnits()`, `getStatus()`. Contains no console output.
 
 **`OrderStatus`**: enum containing `WAITING_FOR_FOOD`, `READY`, `SERVED`, `PAID`, and `CANCELLED`.
 
@@ -249,6 +263,7 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 - **State machines.** `CustomerState` and `OrderStatus` represent lifecycle states. Transition checks in the domain classes and staff actions protect the normal game flow from invalid actions such as paying before service.
 - **Integer money.** Prices, bills and revenue are `int` cents. `Money.format` is the only place dollars appear.
 - **Timing is explicit.** "Next turn at the earliest" rules are implemented with turn comparisons (`currentTurn > servedTurn`, `readyToPayTurn < turn`) rather than by relying on call order.
+- **Customer polymorphism.** `GameController` creates the customer types. Satisfaction penalties, menu selection and pricing use overridable customer methods, so the shared gameplay code works with every type through `Customer` references.
 
 ---
 
@@ -260,7 +275,6 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 - **One task per turn** is enforced by the controller loop, which returns after the first successful Waiter or Chef action. The `Waiter` class itself does not track it.
 - **Locale-dependent display.** Average satisfaction may display as `79.2` or `79,2`, depending on the machine's locale.
 - **Replay coverage.** The documented victory and defeat replays cover complete games but do not exhaust every possible action sequence. No permanent automated unit-test suite is included.
-- Only Stage 1 is implemented.
 
 ---
 
@@ -268,4 +282,4 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 
 [TEST_NOTES.md](TEST_NOTES.md) contains a complete 18-turn victory strategy, a defeat strategy, expected results, and PowerShell replay blocks with all inputs embedded directly in the document. Neither run needs separate input files, network access, or random seeds.
 
-Stage 1 includes only regular customers and the base restaurant operation.
+Stage 1 has established the base restaurant operation with regular customers. The current implementation adds VIP and critic subclasses and introduces them through the controller's arrival setup. 
