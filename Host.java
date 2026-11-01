@@ -1,16 +1,8 @@
-/**
- * Stage 3 Host: seats one waiting customer per turn independently of Waiter.
- *
- * The Host does not own the queue or tables; it coordinates existing domain
- * objects and returns ActionResult so invalid choices can be retried.
- */
+
 public class Host {
     private int lastActionTurn = -1;
 
-    /**
-     * Seat one queued customer at a free table.
-     * Failed actions do not consume the Host's turn.
-     */
+    // Seat one customer per turn while allowing failed attempts to be retried.
     public ActionResult seatCustomer(Customer customer, Table table,
                                      WaitingQueue queue, int currentTurn) {
         if (currentTurn <= 0) {
@@ -42,7 +34,7 @@ public class Host {
                 + " at table " + table.getId() + ".");
     }
 
-    /** Choose not to use the Host's task this turn. */
+    // Use the Host action without seating anyone.
     public ActionResult doNothing(int currentTurn) {
         if (currentTurn <= 0) {
             return ActionResult.failure("Turn number must be positive.");
