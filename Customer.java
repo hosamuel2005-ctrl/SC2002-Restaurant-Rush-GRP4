@@ -80,16 +80,7 @@ public class Customer {
         return (id - 1) % menuSize;
     }
 
-    /**
-     * Restore satisfaction for a customer still waiting for a table or food.
-     *
-     * Happy Hour calls this once at the start of each active turn. The
-     * controller decides WHEN to apply the recovery; the Customer enforces
-     * WHICH lifecycle states are eligible and keeps satisfaction <= 100.
-     *
-     * @param points amount of satisfaction to recover (must be non-negative)
-     * @return the actual amount recovered (0 when ineligible or already at 100)
-     */
+   // Restore satisfaction for eligible customers, capped at 100.
     public int restoreSatisfaction(int points) {
         if (points < 0) {
             throw new IllegalArgumentException("Recovery points cannot be negative.");
