@@ -80,24 +80,6 @@ public class Customer {
         return (id - 1) % menuSize;
     }
 
-   // Restore satisfaction for eligible customers, capped at 100.
-    public int restoreSatisfaction(int points) {
-        if (points < 0) {
-            throw new IllegalArgumentException("Recovery points cannot be negative.");
-        }
-
-        if (state != CustomerState.WAITING
-                && state != CustomerState.SEATED
-                && state != CustomerState.ORDERED) {
-            return 0;
-        }
-
-        // Use the remaining room instead of addition, avoiding integer overflow.
-        int recovered = Math.min(100 - satisfaction, points);
-        satisfaction += recovered;
-        return recovered;
-    }
-
     // Move from waiting to seated
     public void seat() {
         requireState(CustomerState.WAITING);
