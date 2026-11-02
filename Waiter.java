@@ -26,7 +26,15 @@ public class Waiter {
     return ActionResult.success("Customer " + customer.getId() + " seated at table " + table.getId() + ".");
   }
 
-  public ActionResult takeOrder(Customer customer) {
+  public ActionResult takeOrder(Customer customer, int currentTurn, HappyHour happyHour) {
+    if (currentTurn < 1) {
+      throw new IllegalArgumentException("Turn must be at least 1.");
+    }
+
+    if (happyHour == null) {
+      throw new IllegalArgumentException("Happy Hour cannot be null.");
+    }
+
     if (customer == null) {
       return ActionResult.failure("Customer not found.");
     }
@@ -35,12 +43,12 @@ public class Waiter {
       return ActionResult.failure("Customer is not ready to order.");
     }
 
-    // The customer chooses the dish and prices the order, same for every customer type
+    // The customer chooses the dish; Order locks the price (customer discount first, then Happy Hour)
     MenuItem item = menu.getItem(customer.chooseMenuItemIndex(menu.getMenuSize()));
-    Order order = new Order(item, customer);
+    Order order = new Order(item, customer, happyHour, currentTurn);
     customer.placeOrder(order);
 
-    return ActionResult.success(describeOrder(customer, order));
+    return ActionResult.success(describeOrder(customer, order, happyHour.isActive(currentTurn)));
   }
 
   public ActionResult serveOrder(Customer customer, int currentTurn) {
@@ -69,12 +77,15 @@ public class Waiter {
   }
 
   // Show the locked bill, and the menu price when a discount applies
-  private String describeOrder(Customer customer, Order order) {
+  private String describeOrder(Customer customer, Order order, boolean happyHourActive) {
     int menuPrice = order.getItem().getPrice();
     String text = "Customer " + customer.getId() + " ordered " + order.getItem().getName()
         + ". Bill: " + Money.format(order.getPrice());
     if (order.getPrice() != menuPrice) {
       text += " (menu price " + Money.format(menuPrice) + ")";
+    }
+    if (happyHourActive) {
+      text += " [Happy Hour]";
     }
     return text + ".";
   }
