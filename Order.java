@@ -5,8 +5,15 @@ public class Order {
     private OrderStatus status;
     private final int price;
 
-    // Create an order
+    // Create an order without Happy Hour
     public Order(MenuItem item, Customer customer) {
+        this(item, customer, new HappyHour(), 1);
+    }
+
+    // Create an order and lock the final price
+    public Order(MenuItem item, Customer customer,
+                 HappyHour happyHour, int turn) {
+
         if (item == null) {
             throw new IllegalArgumentException("Item cannot be null.");
         }
@@ -15,8 +22,20 @@ public class Order {
             throw new IllegalArgumentException("Customer cannot be null.");
         }
 
+        if (happyHour == null) {
+            throw new IllegalArgumentException("Happy Hour cannot be null.");
+        }
+
+        if (turn < 1) {
+            throw new IllegalArgumentException("Turn must be at least 1.");
+        }
+
         this.item = item;
-        this.price = customer.calculatePrice(item.getPrice());
+
+        // Customer discount first, then Happy Hour
+        this.price = happyHour.applyDiscount(
+                customer.calculatePrice(item.getPrice()), turn);
+
         this.preparedUnits = 0;
         this.status = OrderStatus.WAITING_FOR_FOOD;
     }
