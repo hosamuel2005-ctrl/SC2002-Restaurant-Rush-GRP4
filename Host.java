@@ -11,9 +11,9 @@ public class Host {
         if (lastActionTurn == currentTurn) {
             return ActionResult.failure("Host has already acted this turn.");
         }
-        if (customer == null || queue == null
-                || queue.findCustomer(customer.getId()) != customer) {
-            return ActionResult.failure("Customer is not in the waiting queue.");
+        ActionResult validationResult = validateCustomer(customer, queue);
+        if (!validationResult.isSuccess()) {
+            return validationResult;
         }
         if (table == null) {
             return ActionResult.failure("Table not found.");
@@ -44,5 +44,13 @@ public class Host {
         }
         lastActionTurn = currentTurn;
         return ActionResult.success("Host waits this turn.");
+    }
+
+    // Validate that the customer is in the waiting queue and ready to be seated.
+    public ActionResult validateCustomer(Customer customer, WaitingQueue queue) {
+        if (customer == null || queue == null || queue.findCustomer(customer.getId()) != customer || customer.getState() != CustomerState.WAITING) {
+            return ActionResult.failure("Customer is not in the waiting queue.");
+        }
+        return ActionResult.success("Customer can be seated.");
     }
 }

@@ -15,13 +15,14 @@ for all 18 turns.
 |---|---|
 | Happy Hour | 1 = Activate, 2 = Decline; appears each turn until activated, then never again |
 | Host | 1 = Seat (customer ID, table ID), 2 = Wait |
-| Waiter | 1 = Take order (customer ID), 2 = Serve (customer ID), 3 = Wait |
+| Waiter | 1 = Seat (customer ID, table ID), 2 = Take order (customer ID), 3 = Serve (customer ID), 4 = Wait |
 | Chef | 1 = Prepare (customer ID), 2 = Wait |
 
 Prompt order is Happy Hour (if available), Host, Waiter, Chef. Eating and payment
-follow automatically. Happy Hour recovery occurs before the normal penalty.
+follow automatically. Happy Hour recovery occurs at turn start, after activation
+and before staff actions and the detailed state display.
 Average satisfaction may use a decimal comma instead of a dot, depending on
-the machine's locale; 80,8 and 80.8 represent the same value.
+the machine's locale; 81,8 and 81.8 represent the same value.
 
 Customer arrivals are unchanged: IDs 1–6 arrive on turns 1, 4, 7, 10, 13 and 16.
 IDs 1 and 4 are regular, 2 and 5 are VIPs, and 3 and 6 are Critics.
@@ -64,7 +65,7 @@ Paid customers: 5
 Served customers: 5
 Unsatisfied departures: 0
 Revenue: $76.50
-Average satisfaction: 80.8
+Average satisfaction: 81.8
 Targets: 4 paid customers, $45.00 revenue, 60.0 average satisfaction.
 ```
 
@@ -73,21 +74,22 @@ Verified payment checkpoints:
 | Customer | Dish | Order turn | Preparation turns | Served turn | Payment turn | Satisfaction at payment | Bill |
 |---|---|---|---|---|---|---|---|
 | 1 | Salad | 1 | 1 | 2 | 4 | 92 | $9.00 |
-| 2 | Burger | 5 | 5 | 6 | 8 | 95 | $10.80 |
+| 2 | Burger | 5 | 5 | 6 | 8 | 100 | $10.80 |
 | 3 | Salad + Pasta Combo | 7 | 7, 8, 9 | 10 | 12 | 64 | $24.30 |
 | 4 | Salad + Pasta Combo | 11 | 11, 12, 13 | 14 | 16 | 68 | $24.30 |
 | 5 | Salad | 15 | 15 | 16 | 18 | 85 | $8.10 |
 
 Revenue is $9.00 + $10.80 + $24.30 + $24.30 + $8.10 = $76.50.
-Average satisfaction is (92 + 95 + 64 + 68 + 85) / 5 = 80.8.
+Average satisfaction is (92 + 100 + 64 + 68 + 85) / 5 = 81.8.
 
 Additional checks:
 
 - On turn 1, the Host seats customer 1, the Waiter takes their order, and the
   Chef prepares it. Each staff member has a separate action.
 - Customer 2 ends turn 4 at 95 satisfaction. On turn 5, recovery caps it at
-  100 before the VIP penalty brings it to 95 again. Serving on turn 6 stops
-  further penalties and recovery; payment records 95.
+  100 before the end-of-turn VIP penalty brings it to 95 again. Serving on turn 6 stops
+  further penalties. At turn start on turn 6, recovery raises satisfaction from
+  95 to 100 before service; payment records 100.
 - The turn 7 combo order is charged at $24.30, without a Happy Hour discount.
 - Each paid combo needs three Chef actions and is served on a later turn.
 - Customer 5 receives only the VIP discount: $9.00 × 0.90 = $8.10.
@@ -105,7 +107,7 @@ On every turn from 1 through 18, enter these choices in order:
 |---|---|
 | Happy Hour | 2 - Decline |
 | Host | 2 - Wait |
-| Waiter | 3 - Wait |
+| Waiter | 4 - Wait |
 | Chef | 2 - Wait |
 
 No customer or table IDs are requested in this run.

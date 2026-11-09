@@ -8,6 +8,24 @@ public class Waiter {
     this.menu = menu;
   }
 
+  public ActionResult seatCustomer(Customer customer, Table table, WaitingQueue queue) {
+    if (customer == null || queue == null || queue.findCustomer(customer.getId()) != customer) {
+      return ActionResult.failure("Customer is not in the waiting queue.");
+    }
+
+    if (table == null) {
+      return ActionResult.failure("Table not found.");
+    }
+
+    if (!table.isFree()) {
+      return ActionResult.failure("Table is occupied.");
+    }
+
+    queue.seatCustomer(customer.getId(), table);
+
+    return ActionResult.success("Customer " + customer.getId() + " seated at table " + table.getId() + ".");
+  }
+
   public ActionResult takeOrder(Customer customer, int currentTurn, HappyHour happyHour) {
     if (currentTurn < 1) {
       throw new IllegalArgumentException("Turn must be at least 1.");

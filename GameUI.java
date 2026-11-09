@@ -21,9 +21,10 @@ public class GameUI {
     public void showWaiterMenu() {
         System.out.println();
         System.out.println(" === WAITER ACTION === ");
-        System.out.println("1. Take order");
-        System.out.println("2. Serve ready order");
-        System.out.println("3. Wait");
+        System.out.println("1. Seat customer");
+        System.out.println("2. Take order");
+        System.out.println("3. Serve ready order");
+        System.out.println("4. Wait");
     }
 
     // Chef action menu: display the available actions for the chef
@@ -51,6 +52,12 @@ public class GameUI {
         }
     }
 
+    public void showError(String message) {
+        System.out.println("\n*** ACTION FAILED ***");
+        System.out.println(message);
+        System.out.println("Please choose again.");
+    }
+
     // Read any integer within a range
     // Keep asking until the player enters a valid integer within the specified range
     public int readInt(String prompt, int min, int max) {
@@ -73,7 +80,10 @@ public class GameUI {
             }
 
             if (choice < min || choice > max) {
+                System.out.println("\n*** INVALID CHOICE ***");
+                System.out.println("You entered: " + choice);
                 System.out.println("Choose between " + min + " and " + max + ".");
+                System.out.println();
                 continue;
             }
 

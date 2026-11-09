@@ -49,7 +49,7 @@ public class GameController {
     private int nonsatisfiedLeave;
 
     // === Additional game objects ===
-    // Host manages customer arrivals and seating
+    // Host provides a separate seating action each turn.
     private final Host host = new Host();
 
     // HappyHour object to apply discounts during the game
@@ -79,12 +79,13 @@ public class GameController {
         // Step 1: Handle customer arrivals
         handleArrivals();
 
-        // Display the current game state to the player
+        // Happy Hour activation and recovery happen at turn start, before staff act.
+        ui.showTurn(currentTurn);
+        handleHappyHour();
+        applyHappyHourRecovery();
         displayGameState();
 
-        // Step 2: Handle staff actions (waiter, chef, host)
-        // Step 3: Handle Happy Hour activation
-        handleHappyHour();
+        // Each staff member has a separate action; Host acts before Waiter.
         handleHostAction();
         handleWaiterAction();
         handleChefAction();
@@ -93,8 +94,7 @@ public class GameController {
         advanceEating();
         processPayment();
 
-        // Step 5: Apply Happy Hour recovery and satisfaction penalties
-        applyHappyHourRecovery();
+        // Step 5: Apply normal satisfaction penalties.
         applySatisfactionPenalty();
 
         // Step 6: End of turn summary
@@ -135,7 +135,6 @@ public class GameController {
 
     // Display game state
     private void displayGameState() {
-        ui.showTurn(currentTurn);
         ui.showMessage("Revenue: " + Money.format(cashier.getRevenueCents()));
         ui.showMessage("Average satisfaction: " + averageText());
 
@@ -175,7 +174,7 @@ public class GameController {
         }
 
         if (freeTable && queue.size() > 0) {
-            ui.showMessage(" Host: seat a queued customer");
+            ui.showMessage(" Host or Waiter: seat a queued customer");
         }
 
         for (Table table : tables) {
@@ -200,32 +199,42 @@ public class GameController {
     private void handleWaiterAction() {
         while (true) {
             ui.showWaiterMenu();
-            int choice = ui.readInt("Enter choice: ", 1, 3);
+            int choice = ui.readInt("Enter choice: ", 1, 4);
             ActionResult result;
 
             switch (choice) {
-                case 1: {
-                    int customerId = ui.readInt("Customer ID to take order: ", 1, 6);
+                case 1 :
+                    int customerId = ui.readInt("Customer ID to seat: ", 1, 6);
+                    Customer customer = findCustomer(customerId);
+
+                    result = host.validateCustomer(customer, queue);
+
+                    if (result.isSuccess()) {
+                        int tableId = ui.readInt("Table ID: ", 1, 2);
+                        result = waiter.seatCustomer(customer, findTable(tableId), queue);
+                    }
+                    break;
+                case 2:
+                    customerId = ui.readInt("Customer ID to take order: ", 1, 6);
                     result = waiter.takeOrder(findCustomer(customerId), currentTurn, happyHour);
                     break;
-                }
-                case 2: {
-                    int customerId = ui.readInt("Customer ID to serve: ", 1, 6);
+                case 3: 
+                    customerId = ui.readInt("Customer ID to serve: ", 1, 6);
                     result = waiter.serveOrder(findCustomer(customerId), currentTurn);
                     if (result.isSuccess()) {
                         servedCount++;
                     }
                     break;
-                }
                 default:
                     result = waiter.doNothing();
                     break;
             }
 
-            ui.showMessage(result.getMessage());
             if (result.isSuccess()) {
+                ui.showMessage(result.getMessage());
                 return;
             }
+            ui.showError(result.getMessage());
         }
     }
 
@@ -243,15 +252,16 @@ public class GameController {
             Customer customer = findCustomer(customerId);
             Order order = customer == null ? null : customer.getOrder();
             if (customer == null || customer.getState() != CustomerState.ORDERED) {
-                ui.showMessage("Customer is not waiting for food.");
+                ui.showError("Customer is not waiting for food.");
                 continue;
             }
 
             ActionResult result = chef.prepareOrder(order);
-            ui.showMessage(result.getMessage());
             if (result.isSuccess()) {
+                ui.showMessage(result.getMessage());
                 return;
             }
+            ui.showError(result.getMessage());
         }
     }
 
@@ -264,18 +274,24 @@ public class GameController {
 
             if (choice == 1) {
                 int customerId = ui.readInt("Customer ID to seat: ", 1, 6);
-                int tableId = ui.readInt("Table ID: ", 1, 2);
+                Customer customer = queue.findCustomer(customerId);
 
-                result = host.seatCustomer(findCustomer(customerId), findTable(tableId), queue, currentTurn);
+                result = host.validateCustomer(customer, queue);
+
+                if (result.isSuccess()) {
+                    int tableId = ui.readInt("Table ID: ", 1, 2);
+
+                    result = host.seatCustomer(customer, findTable(tableId), queue, currentTurn);
+                }
             } else {
                 result = host.doNothing(currentTurn);
             }
 
-            ui.showMessage(result.getMessage());
-
             if (result.isSuccess()) {
+                ui.showMessage(result.getMessage());
                 return;
             }
+            ui.showError(result.getMessage());
         }
     }
 
@@ -300,9 +316,9 @@ public class GameController {
         for (Customer customer : customers) {
             customer.restoreSatisfaction(bonus);
         }
-}
+    }
 
-    // Eating progess
+    // Eating progress
     private void advanceEating() {
         for (Table table : tables) {
             if (!table.isFree() && table.getCustomer().finishEating(currentTurn)) {
@@ -324,7 +340,11 @@ public class GameController {
         for (Customer customer : customers) {
             if (customer.applyEndOfTurnPenalty()) {
                 nonsatisfiedLeave++;
+                ui.showMessage("\n**************************");
+                ui.showMessage("*** CUSTOMER LEFT UNSATISFIED ***");
                 ui.showMessage("Customer " + customer.getId() + " left unhappy.");
+                ui.showMessage("Satisfaction reached 0. No payment collected");
+                ui.showMessage("**************************\n");
             }
         }
 

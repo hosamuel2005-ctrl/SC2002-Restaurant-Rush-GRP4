@@ -77,7 +77,7 @@ The manager may activate **Happy Hour** once per game, before staff actions. It 
 - New orders receive a 20% discount.
 - Customer specific discount apply first, followed by the Happy Hour discount.
 - Each discount is rounded to the nearest cent.
-- Customers in `WAITING`, `SEATED` or `ORDERED` recover up to 15 satisfaction before the normal end of turn penalty, capped at 100.
+- Customers in `WAITING`, `SEATED` or `ORDERED` recover up to 15 satisfaction at turn start, before staff actions, capped at 100.
 - Existing orders keep their locked prices.
 - Happy Hour cannot be activated again after it expires.
 
@@ -85,7 +85,7 @@ For example, a VIP Burger costs $15.00 x 90% x 80% = $10.80 during Happy Hour.
 
 ### Win condition
 
-Checked after turn 18. You win only if **all** of these hold:
+The game runs all 18 turns, with no early-ending gameplay option. Victory or defeat is checked after turn 18. You win only if **all** of these hold:
 
 - at least **4** customers have paid,
 - revenue is at least **$45.00**,
@@ -98,13 +98,13 @@ If nobody has paid, average satisfaction is shown as **N/A** and the game is los
 Each turn runs these steps in order:
 
 1. **Arrivals**: a scheduled customer joins the waiting queue.
-2. **State display**: show customers, tables, revenue and Happy Hour status.
-3. **Happy Hour**: the manager may activate it if it has not been used.
+2. **Happy Hour**: after the turn banner, the manager may activate it if it has not been used. Apply recovery to eligible customers before staff actions.
+3. **State display**: show customers after recovery, tables, revenue and Happy Hour status.
 4. **Host**: seat one queued customer or wait.
-5. **Waiter**: the manager picks one action (take order, serve a ready order, or wait).
+5. **Waiter**: the manager picks one action (seat a queued customer, take order, serve a ready order, or wait).
 6. **Chef**: the manager picks one action (prepare one unit of an order, or wait).
 7. **Eating and payment**: advance eating then automatically collect payment from at most one eligible customer.
-8. **Satisfaction penalty**: apply Happy Hour recovery, then normal waiting penalties. Customers reaching zero satisfaction level will leave, departure cancels any existing order and frees the customer's table. 
+8. **Satisfaction penalty**: apply normal waiting penalties. Customers reaching zero satisfaction level will leave, departure cancels any existing order and frees the customer's table. 
 9. **End-of-turn summary**: served, unsatisfied departures, paid count, revenue, average satisfaction.
 
 ### Timing rules
@@ -124,7 +124,7 @@ WAITING -> SEATED -> ORDERED -> SERVED -> READY_TO_PAY -> PAID
     +----------+----------+----> LEFT   (satisfaction reached 0)
 ```
 
-Satisfaction falls while customers are `WAITING`, `SEATED` and `ORDERED`: regular customers lose 8 per turn, VIP lose 5 and Critic loser 12. During Happy Hourm eligible customers recover up to 15 satisfaction before this penalty. Satisfaction stops falling once food is served.
+Satisfaction falls while customers are `WAITING`, `SEATED` and `ORDERED`: regular customers lose 8 per turn, VIP lose 5 and Critic loser 12. During Happy Hour, eligible customers recover up to 15 satisfaction at turn start, before staff actions. Satisfaction stops falling once food is served.
 
 ### Order lifecycle
 
@@ -138,7 +138,7 @@ WAITING_FOR_FOOD -> READY -> SERVED -> PAID
 
 ## 3. How to play
 
-Each turn the game prints the current state: turn number, revenue, average satisfaction, the waiting queue, both tables with their customer and order progress, and the tasks currently available. Then it prompts you.
+Each turn the game prints the current state: turn number, revenue, average satisfaction, the waiting queue, both tables with their customer and order progress, and the tasks currently available. Happy Hour activation and recovery happen after the turn banner and before the detailed state display and staff prompts.
 Before staff actions, the game offers Happy Hour activation if it is still available: choose 1 to activate it or2 to save it for a later turn.
 
 **Host menu**
@@ -152,9 +152,10 @@ Before staff actions, the game offers Happy Hour activation if it is still avail
 
 | Choice | Action | Prompts |
 |---|---|---|
-| 1 | Take order | Customer ID |
-| 2 | Serve ready order | Customer ID |
-| 3 | Wait | none |
+| 1 | Seat customer | Customer ID, Table ID |
+| 2 | Take order | Customer ID |
+| 3 | Serve ready order | Customer ID |
+| 4 | Wait | none |
 
 **Chef menu**
 
@@ -198,7 +199,7 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 ├── ComboMeal.java        # combines two menu items at a discounted price
 │
 ├── HappyHour.java        # activation, duration, discounts and recovery bonus
-├── Waiter.java           # take order / serve / wait
+├── Waiter.java           # seat / take order / serve / wait
 ├── Chef.java             # prepares one unit of an order
 ├── Cashier.java          # automatic payment, revenue, satisfaction totals
 ├── ActionResult.java     # success/failure + message from staff actions
@@ -216,7 +217,7 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 **`Main`**: creates a `GameUI` and a `GameController`, then calls `startGame()`. Handles closed input and displays a clean exit message through the UI.
 
 **`GameController`**: owns the menu, queue, two tables, customer list, four staff members (Host, Waiter, Chef and Cashier). Runs the 18-turn loop, coordinates Happy Hour activation and staff actions, advances earting, processes payments, applies satisfaction recovery and penalties, and checks the final victory conditions. 
-Game constants are `MAX_TURNS = 18`, `TARGET_PAID = 4`, `TARGET_REVENUE = 4500` (cents) and `TARGET_SATISFACTION = 60.0`. Each turn it calls `handleArrivals`, `displayGameState`, `handleHappyHour`, `handleHostAction`, `handleWaiterAction`, `handleChefAction`, `advanceEating`, `processPayment`, `applyHappyHourRecovery`, `applySatisfactionPenalty` and `displayEndOfTurn`. After turn 18 it prints VICTORY or DEFEAT.
+Game constants are `MAX_TURNS = 18`, `TARGET_PAID = 4`, `TARGET_REVENUE = 4500` (cents) and `TARGET_SATISFACTION = 60.0`. Each turn it calls `handleArrivals`, `handleHappyHour`, `applyHappyHourRecovery`, `displayGameState`, `handleHostAction`, `handleWaiterAction`, `handleChefAction`, `advanceEating`, `processPayment`, `applySatisfactionPenalty` and `displayEndOfTurn`. After turn 18 it prints VICTORY or DEFEAT.
 
 **`GameUI`**: handles console input and output using a `Scanner`. Displays the turn banner, food menu, messages, and Host, Waiter and Chef action menus. `readInt(prompt, min, max)` repeatedly asks until the player enters an integer within the allowed range. Throws `NoSuchElementException` when input closes. 
 
@@ -267,11 +268,12 @@ Starts with zero prepared units and status `WAITING_FOR_FOOD`. `prepareOneUnit()
 
 **`Host`**: seats one queued customer at a free table per turn, or waits. Successful actions consume the Host's turn, failed attempts allow a retry.
 
-**`Waiter`**: takes orders, serves ready food or waits. Each action returns an `ActionResult`. The controller allowz one successful Waiter action per turn, failed attempts allow a retry.
+**`Waiter`**: seats customers, takes orders, serves ready food or waits. Seating uses the Waiter action; the Host has its own separate seating action. Each action returns an `ActionResult`. The controller allowz one successful Waiter action per turn, failed attempts allow a retry.
 
 | Method | Checks |
 |---|---|
-| `takeOrder(customer)` | customer is `SEATED`; picks the dish, creates the `Order`, reports name and price |
+| `seatCustomer(customer, table, queue)` | Requires a queued waiting customer and a free table; seats the customer and removes them from the queue |
+| `takeOrder(customer, currentTurn, happyHour)` | customer is `SEATED`; picks the dish, creates the `Order`, reports name and price |
 | `serveOrder(customer, currentTurn)` | customer is `ORDERED` and the order is `READY` |
 | `doNothing()` | none |
 
