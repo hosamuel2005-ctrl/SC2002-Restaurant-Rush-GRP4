@@ -48,6 +48,13 @@ public class GameController {
     // Count the total number of customers who left unsatisfied during the game
     private int nonsatisfiedLeave;
 
+    // === Additional game objects ===
+    // Host manages customer arrivals and seating
+    private final Host host = new Host();
+
+    // HappyHour object to apply discounts during the game
+    private final HappyHour happyHour = new HappyHour();
+
     // Constructor initializes the game controller with the user interface and creates a waiter
     public GameController(GameUI ui) {
         this.ui = ui;
@@ -69,22 +76,25 @@ public class GameController {
 
     // Execute one turn
     private void playTurn() {
-        // Step 1: Scheduled arrivals
+        // Step 1: Handle customer arrivals
         handleArrivals();
 
-        // Display current game state
+        // Display the current game state to the player
         displayGameState();
 
-        // Step 2 & 3: Manager assigns staff actions
-        // Waiter acts before Chef, according to the game rules
+        // Step 2: Handle staff actions (waiter, chef, host)
+        // Step 3: Handle Happy Hour activation
+        handleHappyHour();
+        handleHostAction();
         handleWaiterAction();
         handleChefAction();
 
-        // Step 4: Eating and payment
+        // Step 4: Advance eating progress and process payments
         advanceEating();
         processPayment();
 
-        // Step 5: Reduce satisfaction for waiting customers and remove those who leave unsatisfied
+        // Step 5: Apply Happy Hour recovery and satisfaction penalties
+        applyHappyHourRecovery();
         applySatisfactionPenalty();
 
         // Step 6: End of turn summary
@@ -128,6 +138,9 @@ public class GameController {
         ui.showTurn(currentTurn);
         ui.showMessage("Revenue: " + Money.format(cashier.getRevenueCents()));
         ui.showMessage("Average satisfaction: " + averageText());
+
+        // Happy Hour status
+        ui.showMessage(happyHour.describeStatus(currentTurn));
         
         // Waiting queue
         ui.showMessage("Waiting queue: ");
@@ -162,7 +175,7 @@ public class GameController {
         }
 
         if (freeTable && queue.size() > 0) {
-            ui.showMessage(" Waiter: seat a queued customer");
+            ui.showMessage(" Host: seat a queued customer");
         }
 
         for (Table table : tables) {
@@ -179,7 +192,7 @@ public class GameController {
                 }
             }
         }
-        ui.showMessage(" Waiter and Chef may choose Wait");
+        ui.showMessage(" Host, Waiter and Chef may choose Wait");
         ui.showMessage(" " + cashier.describeAvailableTask(currentTurn, tables));
     }
 
@@ -187,20 +200,15 @@ public class GameController {
     private void handleWaiterAction() {
         while (true) {
             ui.showWaiterMenu();
-            int choice = ui.readInt("Enter choice: ", 1, 4);
+            int choice = ui.readInt("Enter choice: ", 1, 3);
             ActionResult result;
 
             switch (choice) {
                 case 1:
-                    int customerId = ui.readInt("Customer ID to seat: ", 1, 6);
-                    int tableId = ui.readInt("Table ID: ", 1, 2);
-                    result = waiter.seatCustomer(findCustomer(customerId), findTable(tableId), queue);
+                    int customerId = ui.readInt("Customer ID to take order: ", 1, 6);
+                    result = waiter.takeOrder(findCustomer(customerId), currentTurn, happyHour);
                     break;
                 case 2:
-                    customerId = ui.readInt("Customer ID to take order: ", 1, 6);
-                    result = waiter.takeOrder(findCustomer(customerId));
-                    break;
-                case 3:
                     customerId = ui.readInt("Customer ID to serve: ", 1, 6);
                     result = waiter.serveOrder(findCustomer(customerId), currentTurn);
                     if (result.isSuccess()) {
@@ -244,6 +252,53 @@ public class GameController {
             }
         }
     }
+
+    private void handleHostAction() {
+        while (true) {
+            ui.showHostMenu();
+            int choice = ui.readInt("Enter choice: ", 1, 2);
+
+            ActionResult result;
+
+            if (choice == 1) {
+                int customerId = ui.readInt("Customer ID to seat: ", 1, 6);
+                int tableId = ui.readInt("Table ID: ", 1, 2);
+
+                result = host.seatCustomer(findCustomer(customerId), findTable(tableId), queue, currentTurn);
+            } else {
+                result = host.doNothing(currentTurn);
+            }
+
+            ui.showMessage(result.getMessage());
+
+            if (result.isSuccess()) {
+                return;
+            }
+        }
+    }
+
+    private void handleHappyHour() {
+        if (!happyHour.isAvailable()) {
+            return;
+        }
+
+        int choice = ui.readInt("Happy Hour is available! Do you want to activate it? (1 for Yes, 2 for No): ", 1, 2);
+        if (choice == 1) {
+            ui.showMessage(happyHour.activate(currentTurn).getMessage());
+            ui.showMessage(happyHour.describeStatus(currentTurn));
+        }
+    }
+
+    private void applyHappyHourRecovery() {
+        int bonus = happyHour.getSatisfactionBonus(currentTurn);
+        if (bonus == 0) {
+            return;
+        }
+
+        for (Customer customer : customers) {
+            customer.restoreSatisfaction(bonus);
+        }
+}
 
     // Eating progess
     private void advanceEating() {

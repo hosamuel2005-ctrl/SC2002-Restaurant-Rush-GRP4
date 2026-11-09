@@ -1,8 +1,8 @@
 # Restaurant Rush (SC2002 Group 4)
 
-A turn-based, command-line restaurant management game written in Java. You play the manager: each turn you tell the **Waiter** and the **Chef** what to do, the **Cashier** collects payments automatically, and customers lose patience the longer they wait. Survive 18 turns and hit all three targets to win.
+A turn-based, command-line restaurant management game written in Java. You play the manager: each turn you direct the **Host**, **Waiter** and the **Chef** telling them what to do. The **Cashier** collects payments automatically. Manage customer satisfactionm prepare meals and use Happy Hour strategically to meet all three targets within 18 turns.
 
-**Current status:** Stage 2 - Base restaurant gameplay with regular, VIP and Critic customers.
+**Current status:** Stage 3 (**Final stage**) - Host seating, combo meals and Happy Hour, building on stage 2 regular, VIP and Critic customers.
 
 Repository: [SC2002-Restaurant-Rush-GRP4](https://github.com/hosamuel2005-ctrl/SC2002-Restaurant-Rush-GRP4).
 
@@ -41,11 +41,11 @@ These commands run from the project root in PowerShell. On Bash, use `mkdir -p o
 
 ### Setup
 
-| Item | Stage 1 value |
+| Item | Value |
 |---|---|
 | Turns | 18 |
 | Tables | 2 (one customer per table) |
-| Staff | 1 Waiter, 1 Chef, 1 Cashier |
+| Staff | 1 Host, 1 Waiter, 1 Chef, 1 Cashier |
 | Customers | 6 in total, arriving on turns 1, 4, 7, 10, 13, 16 (customer IDs 1 to 6) |
 | Starting satisfaction | 100 per customer |
 
@@ -56,6 +56,7 @@ These commands run from the project root in PowerShell. On Bash, use `mkdir -p o
 | Salad | $9.00 | 1 |
 | Burger | $15.00 | 1 |
 | Pasta | $18.00 | 2 |
+| Salad + Pasta Combo | $24.30 | 3 |
 
 Customers choose their own food based on deterministic rules.
 
@@ -65,9 +66,22 @@ Customers choose their own food based on deterministic rules.
 | VIP | 2, 5 | 5 | `(id - 1) % menuSize` | 10% discount, rounded to the nearest cent |
 | Critic | 3, 6 | 12 | Last menu item | Full price |
 
-With the current menu, customers 1-6 order Saled, Burger, Pasta, Salad, Burger and Pasta respectively.
+With the current four-item menu, customers 1-6 choose Salad, Burger, Salad + Pasta Combo, Salad + Pasta Combo, Salad and Salad + Pasta Combo respectively.
+A Combo combines two menu items. Its price is 90% of their combined price, rounded to the nearest centm and its preparation units are added together.
 The final customer-specific price is calculated and stored when the order is created. Payment uses this stored price.
 
+### Happy Hour
+
+The manager may activate **Happy Hour** once per game, before staff actions. It lasts for the activation turn and the following turn.
+
+- New orders receive a 20% discount.
+- Customer specific discount apply first, followed by the Happy Hour discount.
+- Each discount is rounded to the nearest cent.
+- Customers in `WAITING`, `SEATED` or `ORDERED` recover up to 15 satisfaction before the normal end of turn penalty, capped at 100.
+- Existing orders keep their locked prices.
+- Happy Hour cannot be activated again after it expires.
+
+For example, a VIP Burger costs $15.00 x 90% x 80% = $10.80 during Happy Hour.
 
 ### Win condition
 
@@ -84,18 +98,23 @@ If nobody has paid, average satisfaction is shown as **N/A** and the game is los
 Each turn runs these steps in order:
 
 1. **Arrivals**: a scheduled customer joins the waiting queue.
-2. **Waiter**: the manager picks one action (seat, take order, serve, or wait).
-3. **Chef**: the manager picks one action (prepare one unit of an order, or wait).
-4. **Eating and payment**: customers who were served on an earlier turn finish eating and become ready to pay, then the Cashier charges at most one customer.
-5. **Satisfaction penalty**: satisfaction drops in `WAITING`, `SEATED` and `ORDERED`: regular customers lose 8 per turn, VIPs lose 5, and critics lose 12. It stops dropping once food is served. Starting from 100, an unserved regular customer leaves after 13 penalties, a VIP after 20, and a critic after 9. Departure cancels any existing order and frees the customer's table. 
-6. **End-of-turn summary**: served, unsatisfied departures, paid count, revenue, average satisfaction.
+2. **State display**: show customers, tables, revenue and Happy Hour status.
+3. **Happy Hour**: the manager may activate it if it has not been used.
+4. **Host**: seat one queued customer or wait.
+5. **Waiter**: the manager picks one action (take order, serve a ready order, or wait).
+6. **Chef**: the manager picks one action (prepare one unit of an order, or wait).
+7. **Eating and payment**: advance eating then automatically collect payment from at most one eligible customer.
+8. **Satisfaction penalty**: apply Happy Hour recovery, then normal waiting penalties. Customers reaching zero satisfaction level will leave, departure cancels any existing order and frees the customer's table. 
+9. **End-of-turn summary**: served, unsatisfied departures, paid count, revenue, average satisfaction.
 
 ### Timing rules
 
+- The Host acts before the Waiter, so a customer can be seated and place an order during the same turn.
 - The Waiter acts before the Chef, so a dish finished this turn can be served **next turn at the earliest**.
 - A customer served on turn *t* finishes eating on turn *t + 1* and is charged on turn *t + 2* at the earliest.
 - An invalid choice (for example seating at an occupied table) prints why it failed and lets you choose again. It does not use up the task.
 - The Cashier charges at most one customer per turn. If several are ready, the one who has been ready longest goes first (ties go to the lower customer ID).
+- Each staff member receives a separate action. A failed action allowz a retry.
 
 ### Customer lifecycle
 
@@ -105,7 +124,7 @@ WAITING -> SEATED -> ORDERED -> SERVED -> READY_TO_PAY -> PAID
     +----------+----------+----> LEFT   (satisfaction reached 0)
 ```
 
-Satisfaction drops by 8 per turn in `WAITING`, `SEATED` and `ORDERED`. It stops dropping once the food is served, so a customer who is served cannot walk out. Starting from 100, a customer who is never helped leaves after 13 turns.
+Satisfaction falls while customers are `WAITING`, `SEATED` and `ORDERED`: regular customers lose 8 per turn, VIP lose 5 and Critic loser 12. During Happy Hourm eligible customers recover up to 15 satisfaction before this penalty. Satisfaction stops falling once food is served.
 
 ### Order lifecycle
 
@@ -120,15 +139,22 @@ WAITING_FOR_FOOD -> READY -> SERVED -> PAID
 ## 3. How to play
 
 Each turn the game prints the current state: turn number, revenue, average satisfaction, the waiting queue, both tables with their customer and order progress, and the tasks currently available. Then it prompts you.
+Before staff actions, the game offers Happy Hour activation if it is still available: choose 1 to activate it or2 to save it for a later turn.
+
+**Host menu**
+
+| Choice | Action | Prompts |
+|---|---|---|
+| 1 | Seat customer | Customer ID, Table ID |
+| 2 | Wait | none |
 
 **Waiter menu**
 
 | Choice | Action | Prompts |
 |---|---|---|
-| 1 | Seat customer | Customer ID, Table ID |
-| 2 | Take order | Customer ID |
-| 3 | Serve ready order | Customer ID |
-| 4 | Wait | none |
+| 1 | Take order | Customer ID |
+| 2 | Serve ready order | Customer ID |
+| 3 | Wait | none |
 
 **Chef menu**
 
@@ -141,9 +167,11 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 
 **Tips**
 
+- Use the Host and Waiter together to seat a customer and take their order during the same turn.
 - Seat and take orders early. Satisfaction starts draining the moment a customer arrives.
+- Combo meals require three Chef actions; start preparing them early.
 - Pasta takes two Chef turns, so start it as soon as it is ordered.
-- Only 2 tables and 1 task per staff member per turn means you cannot serve everyone. The target needs only 4 paid customers out of 6, so choose whom to prioritise.
+- Happy Hour improves waiting satisfaction but reduces revenue from new orders.
 
 ---
 
@@ -156,22 +184,27 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 ├── GameUI.java           # console input and output
 │
 ├── Customer.java         # customer state, satisfaction, state transitions
+├── VIPCustomer.java      # customer with lower patience loss and a 10% discount
+├── CriticCustomer.java   # customer with higher patience loss who chooses the last menu item
 ├── CustomerState.java    # enum of customer states
 ├── Table.java            # single-customer table
 ├── WaitingQueue.java     # customers waiting for a table
+├── Host.java             # seats customers, one action per turn
 │
-├── Menu.java             # the three Stage 1 dishes
+├── Menu.java             # three individual dishes and one combo
 ├── MenuItem.java         # name, price (cents), preparation units
 ├── Order.java            # preparation progress and order status
 ├── OrderStatus.java      # enum of order states
+├── ComboMeal.java        # combines two menu items at a discounted price
 │
-├── Waiter.java           # seat / take order / serve / wait
+├── HappyHour.java        # activation, duration, discounts and recovery bonus
+├── Waiter.java           # take order / serve / wait
 ├── Chef.java             # prepares one unit of an order
 ├── Cashier.java          # automatic payment, revenue, satisfaction totals
 ├── ActionResult.java     # success/failure + message from staff actions
 ├── PaymentRecord.java    # immutable receipt for one payment
 ├── Money.java            # cents -> "$18.00"
-└── TEST_NOTES.md         # embedded replay inputs and expected Stage 1 results
+└── TEST_NOTES.md         # replay inputs and verified expected results
 ```
 
 ---
@@ -182,9 +215,10 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 
 **`Main`**: creates a `GameUI` and a `GameController`, then calls `startGame()`. Handles closed input and displays a clean exit message through the UI.
 
-**`GameController`**: owns the menu, queue, two tables, customer list and the three staff members, and runs the 18-turn loop. Game constants are `MAX_TURNS = 18`, `TARGET_PAID = 4`, `TARGET_REVENUE = 4500` (cents) and `TARGET_SATISFACTION = 60.0`. Each turn it calls `handleArrivals`, `displayGameState`, `handleWaiterAction`, `handleChefAction`, `advanceEating`, `processPayment`, `applySatisfactionPenalty` and `displayEndOfTurn`. After turn 18 it prints VICTORY or DEFEAT.
+**`GameController`**: owns the menu, queue, two tables, customer list, four staff members (Host, Waiter, Chef and Cashier). Runs the 18-turn loop, coordinates Happy Hour activation and staff actions, advances earting, processes payments, applies satisfaction recovery and penalties, and checks the final victory conditions. 
+Game constants are `MAX_TURNS = 18`, `TARGET_PAID = 4`, `TARGET_REVENUE = 4500` (cents) and `TARGET_SATISFACTION = 60.0`. Each turn it calls `handleArrivals`, `displayGameState`, `handleHappyHour`, `handleHostAction`, `handleWaiterAction`, `handleChefAction`, `advanceEating`, `processPayment`, `applyHappyHourRecovery`, `applySatisfactionPenalty` and `displayEndOfTurn`. After turn 18 it prints VICTORY or DEFEAT.
 
-**`GameUI`**: wraps a `Scanner`. `readInt(prompt, min, max)` loops until the player enters a valid integer in range, or throws `NoSuchElementException` when input closes. It displays messages, the turn banner, the food menu through `showMenu(menu)`, and the Waiter and Chef menus. Console input and output are kept here.
+**`GameUI`**: handles console input and output using a `Scanner`. Displays the turn banner, food menu, messages, and Host, Waiter and Chef action menus. `readInt(prompt, min, max)` repeatedly asks until the player enters an integer within the allowed range. Throws `NoSuchElementException` when input closes. 
 
 ### Customers and tables
 
@@ -197,7 +231,8 @@ Input is validated: non-numbers and out-of-range values are rejected and re-aske
 | `markServed(turn)` | `ORDERED` to `SERVED`, records the turn |
 | `finishEating(turn)` | `SERVED` to `READY_TO_PAY` on a later turn; returns whether it changed |
 | `markPaid()` | `READY_TO_PAY` to `PAID` |
-| `applyEndOfTurnPenalty()` | subtracts 8 while waiting; at 0 sets `LEFT`, cancels the order, returns `true` |
+| `applyEndOfTurnPenalty()` | Applies the customer specific penalty in `WAITING`, `SEATED` or `ORDERED`. At zero satisfaction, sets `LEFT`, cancels any order and returns `true`. |
+| `restoreSatisfaction(points)` | Restores satisfaction in `WAITING`, `SEATED` or `ORDERED`, capped at 100. Returns the amount actually restored. Rejects negative points. |
 
 **`VIPCustomer`**: extends `Customer`, loses 5 satisfaction per waiting turn and receives a 10% discount.
 
@@ -213,11 +248,16 @@ Invalid transitions throw `IllegalStateException`, so the Waiter and Cashier che
 
 ### Food
 
-**`Menu`**: holds the three dishes; exposes `getItem(index)` and `getMenuSize()`. The UI displays the menu.
+**`Menu`**: holds four menu items; exposes `getItem(index)` and `getMenuSize()`. The UI displays each item's name, price and preparation units.
 
 **`MenuItem`**: immutable name, price in integer cents, and preparation units. Rejects null or empty names, negative prices, and non-positive preparation units.
 
-**`Order`**: constructed with a non-null menu item and customer. It stores the final customer-specific price at creation and starts at 0 prepared units with status `WAITING_FOR_FOOD`. Holds a non-null, final menu item and starts at 0 prepared units with status `WAITING_FOR_FOOD`. `prepareOneUnit()` advances progress and flips the status to `READY` once the required units are done. `markServed()` (requires `READY`), `markPaid()` (requires `SERVED`) and `cancel()` (anything not yet `PAID`) move it along. Helpers: `isReady()`, `canPrepare()`, `getItem()`, `getPrice()`, `getPreparedUnits()`, `getStatus()`. Contains no console output.
+**`ComboMeal`**: extends `MenuItem` and combines two existing items. Charges 90% of their combined price and sums their preparation units. Reject null component items.
+
+**`HappyHour`**: tracks once per game activation and its two turn duration. Provides the 20% order discount, 15 point satisfaction bonus and status text. The controller applies the recovery to eligible customers.
+
+**`Order`**: stores a menu item, preparation progress, order status and a locked final price. Applies the customer's discount first, followed by the Happy Hour discount if active when the order is created. Later changes to Happy Hour do not affect existing orders. The two argument constructor creates an order without a Happy Hour discount.
+Starts with zero prepared units and status `WAITING_FOR_FOOD`. `prepareOneUnit()` advances progress and flips the status to `READY` once the required units are done. `markServed()` (requires `READY`), `markPaid()` (requires `SERVED`) and `cancel()` (anything not yet `PAID`) move it along. Helpers: `isReady()`, `canPrepare()`, `getItem()`, `getPrice()`, `getPreparedUnits()`, `getStatus()`. Contains no console output.
 
 **`OrderStatus`**: enum containing `WAITING_FOR_FOOD`, `READY`, `SERVED`, `PAID`, and `CANCELLED`.
 
@@ -225,11 +265,12 @@ Invalid transitions throw `IllegalStateException`, so the Waiter and Cashier che
 
 ### Staff
 
-**`Waiter`**: every method returns an `ActionResult`.
+**`Host`**: seats one queued customer at a free table per turn, or waits. Successful actions consume the Host's turn, failed attempts allow a retry.
+
+**`Waiter`**: takes orders, serves ready food or waits. Each action returns an `ActionResult`. The controller allowz one successful Waiter action per turn, failed attempts allow a retry.
 
 | Method | Checks |
 |---|---|
-| `seatCustomer(customer, table, queue)` | customer is in the queue; table exists and is free |
 | `takeOrder(customer)` | customer is `SEATED`; picks the dish, creates the `Order`, reports name and price |
 | `serveOrder(customer, currentTurn)` | customer is `ORDERED` and the order is `READY` |
 | `doNothing()` | none |
@@ -272,7 +313,7 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 - **"Oldest first" for payments** is read as "longest in `READY_TO_PAY`", with ties going to the lower customer ID. If the team reads it as earliest arrival, change `Cashier.isOlder`.
 - **Dish choice is deterministic** (by customer ID) rather than random, which keeps runs reproducible.
 - **Same-turn serving** is prevented by the turn order (Waiter before Chef), not by a separate check inside `Waiter.serveOrder`.
-- **One task per turn** is enforced by the controller loop, which returns after the first successful Waiter or Chef action. The `Waiter` class itself does not track it.
+- **One task per turn** is enforced by the controller loop. The controller allows one successful action per Hostm Waiter and Chef each turn. Failed attempts allow a retry. The Host tracked its last successful action turn internally. The Cashier automatically processes at most one payment per turn. 
 - **Locale-dependent display.** Average satisfaction may display as `79.2` or `79,2`, depending on the machine's locale.
 - **Replay coverage.** The documented victory and defeat replays cover complete games but do not exhaust every possible action sequence. No permanent automated unit-test suite is included.
 
@@ -280,6 +321,6 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 
 ## 8. Testing and stage history
 
-[TEST_NOTES.md](TEST_NOTES.md) contains a complete 18-turn victory strategy, a defeat strategy, expected results, and PowerShell replay blocks with all inputs embedded directly in the document. Neither run needs separate input files, network access, or random seeds.
+[TEST_NOTES.md](TEST_NOTES.md) contains one reproducible 18 turn victory run and one reproducible 18 turn defeat run, with step-by-step actions and verified expected results.
 
-Stage 1 has established the base restaurant operation with regular customers. The current implementation adds VIP and critic subclasses and introduces them through the controller's arrival setup. 
+Stage 1 has established the base restaurant operation with regular customers. Stage 2 introduced VIP and Critic customers with different satisfaction penalties, selection rules and pricing. Stage 3 adds the Host, Combo meals and Happy Hour.

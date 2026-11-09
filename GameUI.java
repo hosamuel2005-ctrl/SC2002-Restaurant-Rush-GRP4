@@ -21,10 +21,9 @@ public class GameUI {
     public void showWaiterMenu() {
         System.out.println();
         System.out.println(" === WAITER ACTION === ");
-        System.out.println("1. Seat customer");
-        System.out.println("2. Take order");
-        System.out.println("3. Serve ready order");
-        System.out.println("4. Wait");
+        System.out.println("1. Take order");
+        System.out.println("2. Serve ready order");
+        System.out.println("3. Wait");
     }
 
     // Chef action menu: display the available actions for the chef
@@ -33,6 +32,13 @@ public class GameUI {
         System.out.println(" === CHEF ACTION === ");
         System.out.println("1. Prepare an order");
         System.out.println("2. Wait");
+    }
+ 
+    // Host action menu: display the available actions for the host
+    public void showHostMenu() {
+        showMessage("\n === HOST ACTION === ");
+        showMessage("1. Seat new customer");
+        showMessage("2. Wait");
     }
 
     // Display the menu
