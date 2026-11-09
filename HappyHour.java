@@ -47,7 +47,7 @@ public class HappyHour {
             return priceCents;
         }
         // nearest cent, halves round up
-        return (priceCents * (100 - DISCOUNT_PERCENT) + 50) / 100;
+        return (int) ((priceCents * (100 - DISCOUNT_PERCENT) + 50) / 100);
     }
 
     public String describeStatus(int turn) {

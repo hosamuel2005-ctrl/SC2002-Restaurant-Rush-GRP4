@@ -204,17 +204,19 @@ public class GameController {
             ActionResult result;
 
             switch (choice) {
-                case 1:
+                case 1: {
                     int customerId = ui.readInt("Customer ID to take order: ", 1, 6);
                     result = waiter.takeOrder(findCustomer(customerId), currentTurn, happyHour);
                     break;
-                case 2:
-                    customerId = ui.readInt("Customer ID to serve: ", 1, 6);
+                }
+                case 2: {
+                    int customerId = ui.readInt("Customer ID to serve: ", 1, 6);
                     result = waiter.serveOrder(findCustomer(customerId), currentTurn);
                     if (result.isSuccess()) {
                         servedCount++;
                     }
                     break;
+                }
                 default:
                     result = waiter.doNothing();
                     break;
