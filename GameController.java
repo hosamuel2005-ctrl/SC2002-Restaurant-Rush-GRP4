@@ -343,7 +343,7 @@ public class GameController {
                 ui.showMessage("\n**************************");
                 ui.showMessage("*** CUSTOMER LEFT UNSATISFIED ***");
                 ui.showMessage("Customer " + customer.getId() + " left unhappy.");
-                ui.showMessage("Satisfaction reached 0. No payment collected");
+                ui.showMessage("Satisfaction reached 0. No payment collected.");
                 ui.showMessage("**************************\n");
             }
         }
