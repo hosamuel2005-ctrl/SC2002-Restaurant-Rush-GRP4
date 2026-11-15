@@ -20,6 +20,7 @@ Reproducible victory and defeat runs: [TEST_NOTES.md](TEST_NOTES.md).
 6. [Design notes](#6-design-notes)
 7. [Assumptions and known limitations](#7-assumptions-and-known-limitations)
 8. [Testing and stage history](#8-testing-and-stage-history)
+9. [Timestamps for video recording](#9-timestamps-for-video-recording)_
 
 ---
 
@@ -326,3 +327,12 @@ A customer is chargeable only if they are `READY_TO_PAY`, have an order, and bec
 [TEST_NOTES.md](TEST_NOTES.md) contains one reproducible 18 turn victory run and one reproducible 18 turn defeat run, with step-by-step actions and verified expected results.
 
 Stage 1 has established the base restaurant operation with regular customers. Stage 2 introduced VIP and Critic customers with different satisfaction penalties, selection rules and pricing. Stage 3 adds the Host, Combo meals and Happy Hour.
+
+## 9. Timestamps for video recording
+- segment 1: 0:06
+- segment 2: 2:21
+- segment 3: 3:53
+- segment 4: 5:15
+- segment 5: 6:51
+- segment 6: 8:55
+- segment 7: 10:14
